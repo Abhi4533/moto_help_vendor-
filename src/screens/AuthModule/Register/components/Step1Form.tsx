@@ -13,24 +13,24 @@ import Dropdown from '../../../../components/common/Dropdown';
 import { companyTypedata, initialValues } from '../helper';
 
 const Step1Form: React.FC = () => {
-  const [getAddressByPincode, { isLoading: isPincodeLoading }] =
-    useGetAddressByPinMutation();
+  const [getAddressByPincode] = useGetAddressByPinMutation();
   const { data: stateData } = useGetStateQuery();
-  const { values, setFieldValue, errors, touched } =
+  const { values, setFieldValue } =
     useFormikContext<VendorRegistrationRequest>();
+
+  const state = values?.VendorDetails?.state;
+  const district = values?.VendorDetails?.destination;
   const { data: districtData } = useGetDistrictQuery({
-    state: values?.VendorDetails?.state,
+    state: state,
   });
 
   const { data: talukaData } = useGetTalukaQuery(
     {
-      state: values?.VendorDetails?.state,
-      district: values?.VendorDetails?.destination,
+      state: state,
+      district: district,
     },
     {
-      skip:
-        values?.VendorDetails?.state === '' ||
-        values?.VendorDetails?.destination === '',
+      skip: state === '' || district === '',
     },
   );
 

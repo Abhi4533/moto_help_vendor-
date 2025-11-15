@@ -1,7 +1,7 @@
 // Register.tsx
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Formik } from 'formik';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Button, Card, ProgressBar, Text } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
@@ -12,6 +12,7 @@ import Step2Form from './components/Step2Form';
 import Step3Form from './components/Step3Form';
 
 import { register } from '../../../api/endpoints/auth.api';
+import { VendorRegistrationRequest } from '../../../api/types/auth.types';
 import { COLORS } from '../../../config/theme';
 import { initialValues } from './helper';
 import { styles } from './styles';
@@ -22,6 +23,7 @@ import {
 } from './validationSchema';
 
 const Register: React.FC = () => {
+  const scrollRef = useRef<ScrollView>(null);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { phoneNumber } = route?.params || { phoneNumber: '' };
@@ -55,6 +57,30 @@ const Register: React.FC = () => {
         return StepOneSchema;
     }
   };
+
+  const handleNextStep = async (
+    nextStep: number,
+    values: VendorRegistrationRequest,
+    setErrors: any,
+    setTouched: any,
+  ) => {
+    const currentSchema = getValidationSchema();
+    try {
+      if (nextStep > step) {
+        await currentSchema.validate(values, { abortEarly: false });
+      }
+      setStep(nextStep);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    } catch (err: any) {
+      const formErrors: Record<string, string> = {};
+      err.inner?.forEach((error: any) => {
+        if (error.path) formErrors[error.path] = error.message;
+      });
+      setErrors(formErrors);
+      setTouched(formErrors);
+    }
+  };
+
   return (
     <SafeContainer>
       <KeyboardAvoidingView
@@ -65,7 +91,7 @@ const Register: React.FC = () => {
           ios: 0,
         })}
       >
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll}>
           <Formik
             initialValues={{
               ...initialValues,
@@ -78,7 +104,7 @@ const Register: React.FC = () => {
             onSubmit={handleSubmit}
             enableReinitialize
           >
-            {({ handleSubmit, isValid, values }) => (
+            {({ handleSubmit, values, setErrors, setTouched }) => (
               <Card style={styles.card}>
                 <Card.Content>
                   <View style={styles.header}>
@@ -110,11 +136,16 @@ const Register: React.FC = () => {
                     )}
                     <Button
                       mode="contained"
-                      onPress={() =>
-                        step === 3 ? handleSubmit() : setStep(s => s + 1)
-                      }
-                      // loading={isLoading}
-                      // disabled={!isValid}
+                      onPress={() => {
+                        if (step === 3) handleSubmit();
+                        else
+                          handleNextStep(
+                            step + 1,
+                            values,
+                            setErrors,
+                            setTouched,
+                          );
+                      }}
                     >
                       {step === 3 ? 'Submit' : 'Next'}
                     </Button>

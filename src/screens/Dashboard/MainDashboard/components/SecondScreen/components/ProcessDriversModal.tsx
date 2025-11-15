@@ -1,0 +1,415 @@
+import { ProcessDriverData } from '@api/api.type';
+import { initializeTrip } from '@store/slice/mapTabSlice';
+import React, { useMemo, useState } from 'react';
+import {
+  FlatList,
+  Modal,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {
+  Appbar,
+  Badge,
+  Card,
+  Chip,
+  IconButton,
+  Searchbar,
+  Text,
+  useTheme,
+} from 'react-native-paper';
+import { useDispatch } from 'react-redux';
+
+interface ProcessDriversModalProps {
+  visible: boolean;
+  onDismiss: () => void;
+  rawData: ProcessDriverData[];
+}
+
+const ProcessDriversModal: React.FC<ProcessDriversModalProps> = ({
+  visible,
+  onDismiss,
+  rawData,
+}) => {
+  const dispatch = useDispatch();
+  const [searchQuery, setSearchQuery] = useState('');
+  const theme = useTheme();
+
+  // Filter data based on search query
+  const filteredData = useMemo(() => {
+    if (!searchQuery) return rawData;
+
+    return rawData.filter(
+      driver =>
+        driver.Driver_Name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        driver.driver_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        driver.vehicle_No?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        driver.LoadPostID?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [rawData, searchQuery]);
+
+  const handleDriverPress = (driver: ProcessDriverData) => {
+    console.log('Selected driver:', driver);
+
+    dispatch(
+      initializeTrip({
+        driverCoordinate: {
+          latitude: driver?.Driver_Latitude,
+          longitude: driver?.Driver_Longitude,
+        },
+        destination: null,
+        origin: {
+          latitude: driver?.pickup_Latitude,
+          longitude: driver?.pickup_Longitude,
+        },
+        parcels: [],
+        tripId: driver?.driver_id,
+      }),
+    );
+
+    onDismiss();
+  };
+
+  const renderDriverItem = ({ item }: { item: ProcessDriverData }) => (
+    <TouchableOpacity
+      onPress={() => handleDriverPress(item)}
+      style={[
+        styles.driverItem,
+        // selectedDriver?.driver_id === item.driver_id &&
+        //   styles.selectedDriverItem,
+      ]}
+    >
+      <Card style={styles.driverCard}>
+        <Card.Content>
+          <View style={styles.driverHeader}>
+            <View style={styles.driverInfo}>
+              <View style={styles.nameRow}>
+                <Text variant="titleMedium" style={styles.driverName}>
+                  🚛 {item.vehicle_No}
+                </Text>
+                <Chip
+                  mode="flat"
+                  textStyle={styles.statusChipText}
+                  style={[
+                    styles.processChip,
+                    item.Trip_Status === 'Progress'
+                      ? styles.progressChip
+                      : item.Trip_Status === 'Completed'
+                        ? styles.completedChip
+                        : styles.pendingChip,
+                  ]}
+                >
+                  {item.Trip_Status?.toUpperCase() || 'IN PROCESS'}
+                </Chip>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 5 }}>
+                <Text variant="bodyMedium" style={styles.driverId}>
+                  {item.Driver_Name}
+                </Text>
+                <Text variant="bodySmall" style={styles.vehicleType}>
+                  {item.vehicleType} • {item.Trip_Status || 'Processing'}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Load Information */}
+          <View style={styles.activitySection}>
+            <Text variant="titleSmall" style={styles.sectionTitle}>
+              Load Details
+            </Text>
+            <View style={styles.activityItem}>
+              <View style={styles.activityInfo}>
+                <Text variant="bodySmall" style={styles.loadId}>
+                  {item.LoadPostID}
+                </Text>
+                <Text variant="bodySmall" style={styles.activityStatus}>
+                  🔄 {item.Trip_Status} •{' '}
+                  {item.OriginToDestinationKm?.toFixed(1)} km
+                </Text>
+                <Text variant="bodySmall" style={styles.distanceText}>
+                  Driver to Origin: {item.DriverToOriginKm?.toFixed(1)} km
+                </Text>
+              </View>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+    </TouchableOpacity>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <IconButton
+        icon="package-variant"
+        size={64}
+        iconColor={theme.colors.outline}
+      />
+      <Text variant="titleMedium" style={styles.emptyStateText}>
+        No Drivers in Process
+      </Text>
+      <Text variant="bodyMedium" style={styles.emptyStateSubtext}>
+        No drivers are currently loading or unloading
+      </Text>
+    </View>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onDismiss={onDismiss}
+    >
+      <View style={styles.modalContainer}>
+        <Appbar.Header>
+          <Appbar.BackAction onPress={onDismiss} />
+          <Appbar.Content
+            title="Drivers in Process"
+            subtitle={`${filteredData.length} driver${filteredData.length !== 1 ? 's' : ''} processing`}
+          />
+          <Badge
+            size={24}
+            style={[styles.badge, { backgroundColor: '#FF9800' }]}
+          >
+            {filteredData.length}
+          </Badge>
+        </Appbar.Header>
+
+        <Searchbar
+          placeholder="Search processing drivers..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchBar}
+          icon="magnify"
+        />
+
+        <FlatList
+          data={filteredData}
+          renderItem={renderDriverItem}
+          keyExtractor={item => item.driver_id}
+          ListEmptyComponent={renderEmptyState}
+          contentContainerStyle={
+            filteredData.length === 0
+              ? styles.emptyListContainer
+              : styles.driverList
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  searchBar: {
+    margin: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  driverList: {
+    padding: 16,
+    paddingTop: 8,
+  },
+  emptyListContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  driverItem: {
+    marginBottom: 16,
+  },
+  selectedDriverItem: {
+    borderColor: '#FF9800',
+    borderWidth: 2,
+    borderRadius: 12,
+  },
+  driverCard: {
+    elevation: 4,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+  },
+  driverHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  driverInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  driverName: {
+    fontWeight: 'bold',
+    flex: 1,
+    marginRight: 12,
+    fontSize: 18,
+    color: '#1a237e',
+  },
+  processChip: {
+    backgroundColor: '#FF9800',
+  },
+  progressChip: {
+    backgroundColor: '#FF9800',
+  },
+  completedChip: {
+    backgroundColor: '#4CAF50',
+  },
+  pendingChip: {
+    backgroundColor: '#9E9E9E',
+  },
+  statusChipText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  driverId: {
+    color: '#455a64',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  vehicleType: {
+    color: '#666',
+    fontSize: 14,
+  },
+  activitySection: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#1a237e',
+  },
+  activityItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  activityInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 5,
+  },
+  loadId: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'monospace',
+    marginBottom: 2,
+  },
+  activityStatus: {
+    fontSize: 11,
+    color: '#FF9800',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  distanceText: {
+    fontSize: 10,
+    color: '#666',
+  },
+  progressIndicator: {
+    alignItems: 'center',
+  },
+  progressBar: {
+    width: 60,
+    height: 6,
+    backgroundColor: '#FFE0B2',
+    borderRadius: 3,
+    marginBottom: 4,
+  },
+  progressFill: {
+    width: '50%',
+    height: 6,
+    backgroundColor: '#FF9800',
+    borderRadius: 3,
+  },
+  progressText: {
+    color: '#FF9800',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  locationSection: {
+    marginBottom: 16,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  locationItem: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  locationLabel: {
+    color: '#666',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  coordinates: {
+    fontSize: 10,
+    color: '#999',
+    fontFamily: 'monospace',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statValue: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#1a237e',
+    marginBottom: 2,
+  },
+  statLabel: {
+    color: '#666',
+    fontSize: 10,
+    textAlign: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#FFE0B2',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    textAlign: 'center',
+    marginBottom: 8,
+    color: '#666',
+  },
+  emptyStateSubtext: {
+    textAlign: 'center',
+    color: '#999',
+    lineHeight: 20,
+  },
+  badge: {
+    marginRight: 16,
+  },
+});
+
+export default ProcessDriversModal;
