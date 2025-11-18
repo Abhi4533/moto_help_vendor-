@@ -1,12 +1,13 @@
-import { useFormikContext } from 'formik';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, IconButton, Text, TextInput } from 'react-native-paper';
 import {
   VendorEmployeeDetails,
   VendorRegistrationRequest,
-} from '../../../../api/types/auth.types';
-import Dropdown from '../../../../components/common/Dropdown';
+} from '@api/types/auth.types';
+import Dropdown from '@components/common/Dropdown';
+import EmptyState from '@components/common/EmptyState';
+import { useFormikContext } from 'formik';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Card, IconButton, Text, TextInput } from 'react-native-paper';
 import { designationdata } from '../helper';
 
 // Constants
@@ -23,15 +24,6 @@ interface AuthorityFormProps {
   setFieldValue: (field: string, value: any) => void;
   setFieldTouched: (field: string, isTouched?: boolean) => void;
   allAuthorities: VendorEmployeeDetails[];
-}
-
-interface SummaryCardProps {
-  currentTotalCount: number;
-  maxAuthorityCount: number;
-  maxCountInput: string;
-  onMaxCountChange: (text: string) => void;
-  onMaxCountBlur: () => void;
-  duplicateCount: number;
 }
 
 // Helper function to check for duplicates
@@ -262,113 +254,6 @@ const AuthorityForm: React.FC<AuthorityFormProps> = React.memo(
               {getFieldError('emailAddress')}
             </Text>
           )}
-        </Card.Content>
-      </Card>
-    );
-  },
-);
-
-const SummaryCard: React.FC<SummaryCardProps> = React.memo(
-  ({
-    currentTotalCount,
-    maxAuthorityCount,
-    maxCountInput,
-    onMaxCountChange,
-    onMaxCountBlur,
-    duplicateCount,
-  }) => {
-    const progressPercentage = Math.min(
-      (currentTotalCount / maxAuthorityCount) * 100,
-      100,
-    );
-    const canAddMore = currentTotalCount < maxAuthorityCount;
-
-    const getProgressColor = () => {
-      if (duplicateCount > 0) return '#ff9800';
-      if (currentTotalCount === maxAuthorityCount) return '#ff6b6b';
-      if (currentTotalCount >= maxAuthorityCount * 0.8) return '#ffa726';
-      return '#4caf50';
-    };
-
-    return (
-      <Card style={styles.summaryCard}>
-        <Card.Content style={styles.summaryContent}>
-          <View style={styles.headerSection}>
-            <View style={styles.headerText}>
-              <Text variant="titleMedium" style={styles.mainTitle}>
-                Operating Authorities
-              </Text>
-              <Text variant="bodySmall" style={styles.subtitle}>
-                {duplicateCount > 0 ? (
-                  <Text style={styles.duplicateAlert}>
-                    {duplicateCount} duplicate(s) found
-                  </Text>
-                ) : canAddMore ? (
-                  `${
-                    maxAuthorityCount - currentTotalCount
-                  } additional slots available`
-                ) : (
-                  'Maximum reached'
-                )}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.countBadge,
-                duplicateCount > 0 && styles.countBadgeWarning,
-                currentTotalCount === maxAuthorityCount &&
-                  styles.countBadgeFull,
-              ]}
-            >
-              <Text variant="labelLarge" style={styles.countText}>
-                {currentTotalCount + 1}/{maxAuthorityCount + 1}
-                {duplicateCount > 0 ? '!' : ''}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.maxCountContainer}>
-            <TextInput
-              label="Maximum Authorities"
-              value={maxCountInput}
-              mode="outlined"
-              style={styles.maxCountInput}
-              keyboardType="number-pad"
-              maxLength={2}
-              left={<TextInput.Icon icon="account-group" />}
-              onChangeText={onMaxCountChange}
-              onBlur={onMaxCountBlur}
-              error={maxAuthorityCount < MIN_AUTHORITIES}
-            />
-            <Text variant="bodySmall" style={styles.maxCountHelpText}>
-              Minimum {MIN_AUTHORITIES} authority required, maximum{' '}
-              {MAX_AUTHORITIES}
-            </Text>
-            {maxAuthorityCount < MIN_AUTHORITIES && (
-              <Text style={styles.errorText}>
-                Minimum {MIN_AUTHORITIES} authority is required
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBackground}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${progressPercentage}%`,
-                    backgroundColor: getProgressColor(),
-                  },
-                ]}
-              />
-            </View>
-            {duplicateCount > 0 && (
-              <Text variant="bodySmall" style={styles.duplicateHint}>
-                Please resolve duplicate entries before proceeding
-              </Text>
-            )}
-          </View>
         </Card.Content>
       </Card>
     );
@@ -606,40 +491,93 @@ const Step2Form: React.FC = () => {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.scrollContent}
     >
-      <SummaryCard
-        currentTotalCount={currentTotalCount}
-        maxAuthorityCount={maxAuthorityCount}
-        maxCountInput={maxCountInput}
-        onMaxCountChange={handleMaxCountChange}
-        onMaxCountBlur={handleMaxCountBlur}
-        duplicateCount={duplicateCount}
+      <FlatList
+        ListHeaderComponent={() => (
+          <Card style={styles.summaryCard}>
+            <Card.Content style={styles.summaryContent}>
+              <View style={styles.headerSection}>
+                <View style={styles.headerText}>
+                  <Text variant="titleMedium" style={styles.mainTitle}>
+                    Operating Authorities
+                  </Text>
+                  <Text variant="bodySmall" style={styles.subtitle}>
+                    {canAddMore && 'Maximum reached'}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.countBadge,
+                    duplicateCount > 0 && styles.countBadgeWarning,
+                    currentTotalCount === maxAuthorityCount &&
+                      styles.countBadgeFull,
+                  ]}
+                >
+                  <Text variant="labelLarge" style={styles.countText}>
+                    {currentTotalCount + 1}/{maxAuthorityCount + 1}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.maxCountContainer}>
+                <TextInput
+                  label="Maximum Authorities"
+                  value={maxCountInput}
+                  mode="outlined"
+                  style={styles.maxCountInput}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  left={<TextInput.Icon icon="account-group" />}
+                  onChangeText={handleMaxCountChange}
+                  onBlur={handleMaxCountBlur}
+                  error={maxAuthorityCount < MIN_AUTHORITIES}
+                />
+                <Text variant="bodySmall" style={styles.maxCountHelpText}>
+                  Minimum {MIN_AUTHORITIES} authority required, maximum{' '}
+                  {MAX_AUTHORITIES}
+                </Text>
+                {maxAuthorityCount < MIN_AUTHORITIES && (
+                  <Text style={styles.errorText}>
+                    Minimum {MIN_AUTHORITIES} authority is required
+                  </Text>
+                )}
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+        data={vendorEmployeeDetails}
+        renderItem={({ item, index }) => renderAdditionalAuthority(item, index)}
+        ListEmptyComponent={() => <EmptyState title="Autority Not Available" />}
+        ListFooterComponentStyle={{ position: 'static' }}
+        ListFooterComponent={() => (
+          <>
+            {canAddMore ? (
+              <Button
+                mode="outlined"
+                onPress={addContact}
+                style={styles.addButton}
+                icon="account-plus"
+                contentStyle={styles.buttonContent}
+                disabled={duplicateCount > 0}
+              >
+                Add Additional Authority
+              </Button>
+            ) : (
+              <Card style={styles.maxLimitCard}>
+                <Card.Content style={styles.maxLimitContent}>
+                  <IconButton
+                    icon="alert-circle"
+                    iconColor="#ff9800"
+                    size={18}
+                  />
+                  <Text variant="bodySmall" style={styles.maxLimitText}>
+                    Maximum of {maxAuthorityCount} authorities reached
+                  </Text>
+                </Card.Content>
+              </Card>
+            )}
+          </>
+        )}
       />
-
-      {vendorEmployeeDetails.map(renderAdditionalAuthority)}
-
-      {canAddMore ? (
-        <Button
-          mode="outlined"
-          onPress={addContact}
-          style={styles.addButton}
-          icon="account-plus"
-          contentStyle={styles.buttonContent}
-          disabled={duplicateCount > 0}
-        >
-          Add Additional Authority
-        </Button>
-      ) : (
-        <Card style={styles.maxLimitCard}>
-          <Card.Content style={styles.maxLimitContent}>
-            <IconButton icon="alert-circle" iconColor="#ff9800" size={18} />
-            <Text variant="bodySmall" style={styles.maxLimitText}>
-              Maximum of {maxAuthorityCount} authorities reached
-            </Text>
-          </Card.Content>
-        </Card>
-      )}
-
-      <View style={styles.bottomSpacer} />
     </ScrollView>
   );
 };
@@ -647,19 +585,12 @@ const Step2Form: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollContent: {
     paddingBottom: 10,
   },
   summaryCard: {
     marginBottom: 16,
-    backgroundColor: '#ffffff',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
   },
   summaryContent: {
     paddingVertical: 12,
@@ -740,12 +671,6 @@ const styles = StyleSheet.create({
   },
   contactCard: {
     marginBottom: 12,
-    backgroundColor: '#ffffff',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   cardHeader: {
     flexDirection: 'row',

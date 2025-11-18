@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import SafeContainer from '../../../components/layout/SafeContainer';
 import { COLORS } from '../../../config/theme';
 import { FooterSection } from './components/FooterSection';
@@ -11,18 +11,26 @@ import { styles } from './style';
 const MobileNumberScreen = () => {
   return (
     <SafeContainer style={{ backgroundColor: COLORS.primary }}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{
+          flex: 1,
+        }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <LogoSection />
-        <View style={styles.card}>
-          <HeaderSection />
-          <PhoneInputSection />
-        </View>
-        <FooterSection />
-      </ScrollView>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <LogoSection />
+          <View style={styles.card}>
+            <HeaderSection />
+            <PhoneInputSection />
+          </View>
+          <FooterSection />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeContainer>
   );
 };

@@ -6,14 +6,14 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Button, Card, ProgressBar, Text } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 
-import SafeContainer from '../../../components/layout/SafeContainer';
 import Step1Form from './components/Step1Form';
 import Step2Form from './components/Step2Form';
 import Step3Form from './components/Step3Form';
 
-import { register } from '../../../api/endpoints/auth.api';
-import { VendorRegistrationRequest } from '../../../api/types/auth.types';
-import { COLORS } from '../../../config/theme';
+import { register } from '@api/endpoints/auth.api';
+import { VendorRegistrationRequest } from '@api/types/auth.types';
+import SafeContainer from '@components/layout/SafeContainer';
+import { COLORS } from '@config/theme';
 import { initialValues } from './helper';
 import { styles } from './styles';
 import {
@@ -87,11 +87,16 @@ const Register: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.root}
         keyboardVerticalOffset={Platform.select({
-          android: 20,
+          android: 0, // Changed from 20 to 0
           ios: 0,
         })}
       >
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <Formik
             initialValues={{
               ...initialValues,

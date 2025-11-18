@@ -1,11 +1,11 @@
+import { login } from '@api/endpoints/auth.api';
 import { useNavigation } from '@react-navigation/native';
+import { formatPhone } from '@utils/formatter';
+import { isPhone } from '@utils/validation';
 import { useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
-import { login } from '../../../../api/endpoints/auth.api';
-import { formatPhone } from '../../../../utils/formatter';
-import { isPhone } from '../../../../utils/validation';
 
 export const PhoneInputSection: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -18,13 +18,14 @@ export const PhoneInputSection: React.FC = () => {
 
   const handleSendOtp = async () => {
     try {
-      console.log({ phoneNumber });
+      setLoading(true);
       const resp = await login({ mobile_number: phoneNumber });
       if (resp?.status === '00') {
         navigation.navigate('OTPVerify', { phoneNumber });
       } else {
         Toast.show({ type: 'error', text1: resp?.message });
       }
+      setLoading(false);
     } catch (error) {}
   };
 

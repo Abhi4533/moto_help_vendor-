@@ -1,42 +1,32 @@
-import { useFormikContext } from 'formik';
-import React, { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { TextInput } from 'react-native-paper';
 import {
   useGetAddressByPinMutation,
   useGetDistrictQuery,
   useGetStateQuery,
-  useGetTalukaQuery,
-} from '../../../../api/hooks_api';
-import { VendorRegistrationRequest } from '../../../../api/types/auth.types';
-import Dropdown from '../../../../components/common/Dropdown';
+} from '@api/hooks_api';
+import { VendorRegistrationRequest } from '@api/types/auth.types';
+import Dropdown from '@components/common/Dropdown';
+import Input from '@components/common/Input';
+import Loader from '@components/common/Loader';
+import { useFormikContext } from 'formik';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { TextInput } from 'react-native-paper';
 import { companyTypedata, initialValues } from '../helper';
 
 const Step1Form: React.FC = () => {
   const [getAddressByPincode] = useGetAddressByPinMutation();
-  const { data: stateData } = useGetStateQuery();
-  const { values, setFieldValue } =
+  const { data: stateData, isLoading: stateLoading } = useGetStateQuery();
+  const { values, setFieldValue, errors } =
     useFormikContext<VendorRegistrationRequest>();
 
-  const state = values?.VendorDetails?.state;
-  const district = values?.VendorDetails?.destination;
-  const { data: districtData } = useGetDistrictQuery({
-    state: state,
-  });
-
-  const { data: talukaData } = useGetTalukaQuery(
-    {
-      state: state,
-      district: district,
-    },
-    {
-      skip: state === '' || district === '',
-    },
-  );
+  const { data: districtData, isLoading: districtLoading } =
+    useGetDistrictQuery({
+      state: values?.VendorDetails?.state,
+    });
 
   const isChalakmalakOrIndividual =
     values.VendorDetails.companyType === 'CHALAK MALAK' ||
-    values.VendorDetails.companyType === 'INDIVIDUAL';
+    values.VendorDetails.companyType === 'OWENER/INDIVIDUAL';
 
   const handlePincodeChange = async (pin: string) => {
     try {
@@ -62,31 +52,7 @@ const Step1Form: React.FC = () => {
     } catch (error) {}
   };
 
-  const stateDropdownData = useMemo(() => {
-    if (!stateData?.data) {
-      return [];
-    }
-    return stateData?.data?.map(item => {
-      return { label: item?.state, value: item?.state };
-    });
-  }, [stateData]);
-
-  const districtDropdownData = useMemo(() => {
-    if (!districtData?.data) {
-      return [];
-    }
-    return districtData?.data?.map(item => {
-      return { label: item?.district, value: item?.district };
-    });
-  }, [districtData]);
-
-  const talukaDropdownData = useMemo(() => {
-    if (!talukaData?.data) return [];
-    return talukaData.data.map((item: any) => ({
-      label: item?.division,
-      value: item?.division,
-    }));
-  }, [talukaData]);
+  // Company Type Select
   const handleCompanyTypeSelect = (val: string | string[]) => {
     setFieldValue('VendorDetails.companyType', val);
     setFieldValue('kycDetails.panNo', '');
@@ -101,15 +67,20 @@ const Step1Form: React.FC = () => {
     ]);
   };
 
+  // Select State
   const handleStateSelect = (val: string | string[]) => {
     setFieldValue('VendorDetails.state', val);
     setFieldValue('VendorDetails.destination', '');
   };
+
+  // Select district
   const handleDistrictSelect = (val: string | string[]) => {
     setFieldValue('VendorDetails.destination', val);
   };
+
   return (
     <View style={styles.container}>
+      <Loader visible={stateLoading || districtLoading} />
       <View style={styles.formContainer}>
         {/* Company Type Field */}
         <View style={styles.inputContainer}>
@@ -118,11 +89,13 @@ const Step1Form: React.FC = () => {
             data={companyTypedata}
             value={values?.VendorDetails?.companyType}
             onChange={handleCompanyTypeSelect}
+            error={!!errors?.VendorDetails?.companyType}
+            errorMessage={errors?.VendorDetails?.companyType}
           />
         </View>
 
         {/* Company Name / Individual Name */}
-        <TextInput
+        <Input
           label={
             isChalakmalakOrIndividual
               ? 'Full Name (Name As per Aadhaar) *'
@@ -135,11 +108,12 @@ const Step1Form: React.FC = () => {
             setFieldValue('VendorDetails.companyName', text.toUpperCase())
           }
           left={<TextInput.Icon icon="office-building" size={18} />}
+          error={errors?.VendorDetails?.companyName}
         />
 
         {/* Owner Name for Business Entities */}
         {!isChalakmalakOrIndividual && (
-          <TextInput
+          <Input
             label="Owner Name (Name As per Aadhaar) *"
             value={values.VendorDetails.owner_name}
             mode="outlined"
@@ -148,6 +122,7 @@ const Step1Form: React.FC = () => {
               setFieldValue('VendorDetails.owner_name', text.toUpperCase())
             }
             left={<TextInput.Icon icon="account" size={18} />}
+            error={errors?.VendorDetails?.owner_name}
           />
         )}
 
@@ -168,7 +143,7 @@ const Step1Form: React.FC = () => {
 
         {/* Address Section */}
 
-        <TextInput
+        <Input
           label="Building, Apartment, Plot Number *"
           value={values.VendorDetails.address1}
           mode="outlined"
@@ -177,9 +152,10 @@ const Step1Form: React.FC = () => {
             setFieldValue('VendorDetails.address1', text.toUpperCase())
           }
           left={<TextInput.Icon icon="home" size={18} />}
+          error={errors?.VendorDetails?.address1}
         />
 
-        <TextInput
+        <Input
           label="Area, Street, Sector, Village"
           value={values.VendorDetails.address2}
           mode="outlined"
@@ -188,54 +164,57 @@ const Step1Form: React.FC = () => {
             setFieldValue('VendorDetails.address2', text.toUpperCase())
           }
           left={<TextInput.Icon icon="road" size={18} />}
+          error={errors?.VendorDetails?.address2}
         />
 
         {/* Location Details in Compact Row */}
-        <View style={styles.compactRow}>
-          <View style={{ width: 100 }}>
-            <TextInput
-              label="Pincode *"
-              value={values.VendorDetails.pincode}
-              mode="outlined"
-              style={[styles.textInput, styles.compactInput]}
-              keyboardType="number-pad"
-              maxLength={6}
-              onChangeText={handlePincodeChange}
-              // left={<TextInput.Icon icon="map-marker" size={18} />}
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Dropdown
-              label="State *"
-              data={stateDropdownData}
-              value={values?.VendorDetails?.state}
-              onChange={handleStateSelect}
-            />
-          </View>
-        </View>
-
+        <Input
+          label="Pincode *"
+          placeholder="000000"
+          value={values.VendorDetails.pincode}
+          mode="outlined"
+          style={[styles.textInput, styles.compactInput]}
+          keyboardType="number-pad"
+          maxLength={6}
+          onChangeText={handlePincodeChange}
+          error={errors?.VendorDetails?.pincode}
+        />
+        <Dropdown
+          label="State *"
+          data={stateData?.data || []}
+          value={values?.VendorDetails?.state}
+          onChange={handleStateSelect}
+          error={!!errors?.VendorDetails?.state}
+          errorMessage={errors?.VendorDetails?.state}
+        />
         {/* State and District Selection */}
-
-        <View style={[styles.selectContainer, { flex: 1 }]}>
-          <Dropdown
-            label="District *"
-            data={districtDropdownData}
-            value={values?.VendorDetails?.destination}
-            onChange={handleDistrictSelect}
-          />
-        </View>
 
         <View
           style={[styles.selectContainer, { flex: 1 }]}
           pointerEvents={values?.VendorDetails?.state ? 'auto' : 'none'}
         >
           <Dropdown
-            label="Town/Tahsil *"
-            data={talukaDropdownData}
-            value={values?.VendorDetails?.Tahsil}
-            onChange={text => setFieldValue('VendorDetails.Tahsil', text)}
+            label="District *"
+            data={districtData?.data || []}
+            value={values?.VendorDetails?.destination}
+            onChange={handleDistrictSelect}
+            error={!!errors?.VendorDetails?.destination}
+            errorMessage={errors?.VendorDetails?.destination}
           />
         </View>
+
+        <Input
+          label="Town/Tahsil *"
+          value={values.VendorDetails.Tahsil}
+          mode="outlined"
+          style={[styles.textInput, styles.compactInput]}
+          onChangeText={text => setFieldValue('VendorDetails.Tahsil', text)}
+          error={errors?.VendorDetails?.Tahsil}
+          editable={
+            !!values?.VendorDetails?.state &&
+            !!values?.VendorDetails?.destination
+          }
+        />
       </View>
     </View>
   );

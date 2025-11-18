@@ -11,10 +11,13 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
-import { login, verifyOTP } from '../../../../api/endpoints/auth.api';
-import { loginSuccess, setKycStatus } from '../../../../store/slices/authSlice';
-import { formatPhone } from '../../../../utils/formatter';
-import { isOTPValid } from '../../../../utils/validation';
+
+// ⭐ Auto OTP detection module
+import { login, verifyOTP } from '@api/endpoints/auth.api';
+import { loginSuccess, setKycStatus } from '@store/slices/authSlice';
+import { formatPhone } from '@utils/formatter';
+import { isOTPValid } from '@utils/validation';
+import SmsRetriever from 'react-native-sms-retriever';
 
 interface OtpScreenProps {
   phoneNumber: string;
@@ -23,16 +26,50 @@ interface OtpScreenProps {
 const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
   const dispatch = useDispatch();
   const navigation = useNavigation<any>();
+
   const [otp, setOtp] = useState<string[]>(['', '', '', '']);
   const [countdown, setCountdown] = useState<number>(30);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState<boolean>(false);
 
-  // FIX: Array of refs
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
-  // -----------------------
+  // ------------------------------------------------------
+  // ⭐ AUTO OTP LISTENER START
+  // ------------------------------------------------------
+  useEffect(() => {
+    startOtpListener();
+  }, []);
+
+  const startOtpListener = async () => {
+    try {
+      const registered = await SmsRetriever.startSmsRetriever();
+
+      if (registered) {
+        SmsRetriever.addSmsListener(event => {
+          const message = event.message;
+          console.log({ message });
+          // Extract 4-digit OTP using RegEx
+          const extracted = message?.match(/\b(\d{4})\b/);
+
+          if (extracted) {
+            const code = extracted[1].split('');
+            setOtp(code);
+
+            // Auto verify once OTP is received
+            onVerifyOtp();
+          }
+
+          SmsRetriever.removeSmsListener();
+        });
+      }
+    } catch (error) {
+      console.log('SMS Retriever error:', error);
+    }
+  };
+
+  // ------------------------------------------------------
   // TIMER
-  // -----------------------
+  // ------------------------------------------------------
   useEffect(() => {
     let timer: any;
     if (countdown > 0) {
@@ -41,9 +78,9 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // -----------------------
+  // ------------------------------------------------------
   // OTP CHANGE
-  // -----------------------
+  // ------------------------------------------------------
   const onOtpChange = (value: string, index: number) => {
     if (!/^[0-9]?$/.test(value)) return;
 
@@ -56,9 +93,9 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
     }
   };
 
-  // -----------------------
+  // ------------------------------------------------------
   // BACKSPACE HANDLER
-  // -----------------------
+  // ------------------------------------------------------
   const onKeyPress = (
     e: NativeSyntheticEvent<TextInputKeyPressEventData>,
     index: number,
@@ -68,13 +105,15 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
     }
   };
 
-  // -----------------------
-  // VERIFY OTP
-  // -----------------------
+  // ------------------------------------------------------
+  // VERIFY OTP API CALL
+  // ------------------------------------------------------
   const onVerifyOtp = async () => {
     const code = otp.join('');
     setIsVerifyingOtp(true);
+
     const resp = await verifyOTP({ mobile_number: phoneNumber, otp: code });
+
     if (resp?.status === '00') {
       if (!!resp?.userDetails?.vendor_onboarded) {
         dispatch(loginSuccess({ token: resp?.userDetails?.vendorid }));
@@ -88,20 +127,25 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
         navigation.navigate('Register', { phoneNumber });
       }
     } else {
+      setOtp(['', '', '', '']);
       Toast.show({ type: 'error', text1: resp?.message });
     }
+
     setIsVerifyingOtp(false);
   };
 
-  // -----------------------
-  // RESEND OTP
-  // -----------------------
+  // ------------------------------------------------------
+  // RESEND OTP API CALL
+  // ------------------------------------------------------
   const onResendOtp = async () => {
     const resp = await login({ mobile_number: phoneNumber });
     if (resp?.status === '00') {
       setCountdown(30);
       setOtp(['', '', '', '']);
       inputRefs.current[0]?.focus();
+
+      // restart auto listener
+      startOtpListener();
     } else {
       Toast.show({ type: 'error', text1: resp?.message });
     }
@@ -116,13 +160,13 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
         </Text>
       </Text>
 
-      {/* OTP Input Boxes */}
+      {/* OTP BOXES */}
       <View style={styles.otpInputsContainer}>
         {otp.map((digit, index) => (
           <TextInput
             key={index}
             ref={ref => {
-              inputRefs.current[index] = ref; // FIXED — returns void
+              inputRefs.current[index] = ref;
             }}
             style={[styles.otpInput, digit && styles.otpInputFilled]}
             keyboardType="numeric"
@@ -130,6 +174,8 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
             value={digit}
             onChangeText={value => onOtpChange(value, index)}
             onKeyPress={e => onKeyPress(e, index)}
+            textContentType="oneTimeCode" // ⭐ iOS auto-fill
+            autoComplete="sms-otp" // ⭐ Android+Web auto-fill
           />
         ))}
       </View>
@@ -175,9 +221,9 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
 
 export default OtpScreen;
 
-// -----------------------
+// ------------------------------------------------------
 // STYLES
-// -----------------------
+// ------------------------------------------------------
 const styles = StyleSheet.create({
   container: {
     width: '100%',

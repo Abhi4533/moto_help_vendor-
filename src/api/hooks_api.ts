@@ -1,15 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { ENV } from '../config/env';
 import {
+  DistrictData,
   DistrictRequest,
-  DistrictResponse,
   GSTVerificationRequest,
   GSTVerificationResponse,
   PANVerificationRequest,
   PANVerificationResponse,
   PincodeRequest,
   PincodeResponse,
-  StateResponse,
 } from './types/hooks.type';
 
 export const api = createApi({
@@ -25,19 +24,62 @@ export const api = createApi({
         body: queryArg,
       }),
     }),
-    getState: builder.query<StateResponse, void>({
+    getState: builder.query<
+      {
+        status: string;
+        message: string;
+        data: { label: string; value: string }[];
+      },
+      void
+    >({
       query: () => ({
         url: '/get_state_region_district',
         method: 'POST',
-        // body: queryArg,
       }),
+      transformResponse: (response: {
+        status: string;
+        message: string;
+        data: { state: string }[];
+      }) => {
+        return {
+          ...response,
+          data: response.data
+            .filter(item => item.state && item.state !== 'NA') // optional: remove invalid entries
+            .map(item => ({
+              label: item.state.trim(),
+              value: item.state.trim(), // or use a code if you have one later
+            })),
+        };
+      },
     }),
-    getDistrict: builder.query<DistrictResponse, DistrictRequest>({
+    getDistrict: builder.query<
+      {
+        status: string;
+        message: string;
+        data: { label: string; value: string }[];
+      },
+      DistrictRequest
+    >({
       query: queryArg => ({
         url: '/get_state_district_block',
         method: 'POST',
         body: queryArg,
       }),
+      transformResponse: (response: {
+        status: string;
+        message: string;
+        data: DistrictData[];
+      }) => {
+        return {
+          ...response,
+          data: response.data
+            .filter(item => item?.district && item?.district !== 'NA') // optional: remove invalid entries
+            .map(item => ({
+              label: item?.district?.trim(),
+              value: item?.district?.trim(), // or use a code if you have one later
+            })),
+        };
+      },
     }),
     getTaluka: builder.query<any, any>({
       query: body => ({

@@ -7,12 +7,18 @@ export const StepOneSchema = Yup.object({
   VendorDetails: Yup.object({
     companyType: Yup.string().required('Company type is required'),
     companyName: Yup.string()
-      .required('Company/Full name is required')
+      .when('companyType', {
+        is: (type: string) =>
+          type !== 'OWENER/INDIVIDUAL' && type !== 'CHALAK MALAK',
+        then: schema => schema.required('Company name is required'),
+        otherwise: schema => schema.required('Full name is required'),
+      })
       .min(2, 'Too short')
       .max(100, 'Too long'),
 
     owner_name: Yup.string().when('companyType', {
-      is: (type: string) => type !== 'INDIVIDUAL' && type !== 'CHALAK MALAK',
+      is: (type: string) =>
+        type !== 'OWENER/INDIVIDUAL' && type !== 'CHALAK MALAK',
       then: schema => schema.required('Owner name is required'),
       otherwise: schema => schema.notRequired(),
     }),
