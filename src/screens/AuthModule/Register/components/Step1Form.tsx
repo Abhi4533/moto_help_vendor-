@@ -208,7 +208,9 @@ const Step1Form: React.FC = () => {
           value={values.VendorDetails.Tahsil}
           mode="outlined"
           style={[styles.textInput, styles.compactInput]}
-          onChangeText={text => setFieldValue('VendorDetails.Tahsil', text)}
+          onChangeText={text =>
+            setFieldValue('VendorDetails.Tahsil', text.toUpperCase())
+          }
           error={errors?.VendorDetails?.Tahsil}
           editable={
             !!values?.VendorDetails?.state &&
