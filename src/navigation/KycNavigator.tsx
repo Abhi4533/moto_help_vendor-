@@ -1,9 +1,9 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import TemporaryDashboard from '@screens/KycModule/Dashboard';
 import React from 'react';
 // import AddressVerification from '../screens/KycModule/AddressVerification';
 // import BankVerification from '../screens/KycModule/BankVerification';
 // import PanVerification from '../screens/KycModule/PanVerification';
-import TemporaryDashboard from '../screens/KycModule/TemporaryDashboard';
 // import UploadDocuments from '../screens/KycModule/UploadDocuments';
 
 export type KycStackParamList = {

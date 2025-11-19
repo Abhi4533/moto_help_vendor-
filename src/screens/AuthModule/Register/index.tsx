@@ -14,6 +14,8 @@ import { register } from '@api/endpoints/auth.api';
 import { VendorRegistrationRequest } from '@api/types/auth.types';
 import SafeContainer from '@components/layout/SafeContainer';
 import { COLORS } from '@config/theme';
+import { loginSuccess } from '@store/slices/authSlice';
+import Toast from 'react-native-toast-message';
 import { initialValues } from './helper';
 import { styles } from './styles';
 import {
@@ -32,6 +34,12 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     console.log({ values });
+
+    const payload = JSON.parse(JSON.stringify(values));
+
+    delete payload.VendorDetails.verifiedCompanyName;
+    delete payload.VendorDetails.verifiedPanName;
+
     const res = await register({
       ...values,
       VendorDetails: {
@@ -39,9 +47,12 @@ const Register: React.FC = () => {
         employee_count: String(values?.VendorDetails?.employee_count),
       },
     });
-    console.log({ res });
 
     if (res?.status === '00') {
+      dispatch(loginSuccess({ token: res?.userDetails?.vendorid }));
+      navigation.replace('Dashboard');
+    } else {
+      Toast.show({ type: 'error', text1: res?.message });
     }
   };
 

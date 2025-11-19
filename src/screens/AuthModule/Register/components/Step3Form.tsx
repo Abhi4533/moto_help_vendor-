@@ -20,16 +20,34 @@ import {
 } from '../helper';
 
 const Step3Form: React.FC = () => {
-  const { values, setFieldValue, setFieldError, errors } =
-    useFormikContext<VendorRegistrationRequest>();
-  const [verifyGST] = useVerifyGSTMutation();
-  const [verifyPan] = useVerifyPANMutation();
+  const { values, setFieldValue, setFieldError, errors } = useFormikContext<
+    VendorRegistrationRequest & any
+  >();
+  const [verifyGST, { isLoading: verfyGstLoading }] = useVerifyGSTMutation();
+  const [verifyPan, { isLoading: verfyPanLoading }] = useVerifyPANMutation();
   const [checkAlreadyExists, { isLoading: isGSTChecking }] =
     useCheckAlreadyExistsMutation();
 
   const isIndividual =
     values.VendorDetails.companyType === 'CHALAK MALAK' ||
     values.VendorDetails.companyType === 'OWENER/INDIVIDUAL';
+
+  // Check if GST is verified
+  const isGSTVerified = !!values?.VendorDetails?.verifiedCompanyName;
+
+  // Check if PAN is verified
+  const isPANVerified = !!values?.VendorDetails?.verifiedPanName;
+
+  // Check if GST verification button should be active
+  const isGSTVerifyButtonActive =
+    !isIndividual &&
+    values.kycDetails.gstNo?.length === 15 &&
+    !isGSTVerified &&
+    !isPANVerified;
+
+  // Check if PAN verification button should be active
+  const isPANVerifyButtonActive =
+    values.kycDetails.panNo?.length === 10 && !isPANVerified && !isGSTVerified;
 
   // gst duplication check
   const debouncedGstCheck = useDebouncedCallback(async (gst: string) => {
@@ -39,7 +57,7 @@ const Step3Form: React.FC = () => {
     try {
       const resp = await checkAlreadyExists({ gstNo: gst }).unwrap();
       if (resp?.status !== '00') {
-        setFieldError('kycDetails.gstNo', 'GST Number Alredy Registered');
+        setFieldError('kycDetails.gstNo', 'GST Number Already Registered');
       } else {
         const resp = extractPanFromGst(gst);
         setFieldValue('kycDetails.panNo', resp);
@@ -55,7 +73,7 @@ const Step3Form: React.FC = () => {
     try {
       const resp = await checkAlreadyExists({ panNo: pan }).unwrap();
       if (resp?.status !== '00') {
-        setFieldError('kycDetails.panNo', 'PAN Number Alredy Registered');
+        setFieldError('kycDetails.panNo', 'PAN Number Already Registered');
       }
     } catch (error) {}
   }, 600);
@@ -73,7 +91,7 @@ const Step3Form: React.FC = () => {
         if (resp?.status !== '00') {
           setFieldError(
             `VehicleDetails[${index}].vehicle_number`,
-            'Alredy Registered',
+            'Already Registered',
           );
         }
       } catch (error) {}
@@ -85,20 +103,30 @@ const Step3Form: React.FC = () => {
   const handleGSTChange = useCallback(
     (text: string) => {
       const gst = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (isGSTVerified || isPANVerified) {
+        setFieldValue('VendorDetails.verifiedCompanyName', '');
+        setFieldValue('VendorDetails.verifiedPanName', '');
+      }
+
       setFieldValue('kycDetails.gstNo', gst);
       debouncedGstCheck(gst);
     },
-    [setFieldValue, debouncedGstCheck],
+    [setFieldValue, debouncedGstCheck, isGSTVerified, isPANVerified],
   );
 
   // pan number change
   const handlePanChange = useCallback(
     (text: string) => {
       const pan = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (isGSTVerified || isPANVerified) {
+        setFieldValue('VendorDetails.verifiedCompanyName', '');
+        setFieldValue('VendorDetails.verifiedPanName', '');
+      }
+
       setFieldValue('kycDetails.panNo', pan);
       debouncedPanCheck(pan);
     },
-    [setFieldValue, debouncedPanCheck],
+    [setFieldValue, debouncedPanCheck, isGSTVerified, isPANVerified],
   );
 
   // vehicle count change
@@ -131,6 +159,7 @@ const Step3Form: React.FC = () => {
       if (response.status === '00') {
         const gstData = response.data;
         const verifiedCompanyName = gstData.tradeNam || gstData.lgnm;
+        setFieldValue('VendorDetails.verifiedCompanyName', verifiedCompanyName);
         const isCompanyNameMatch = validateGSTCompanyName(
           verifiedCompanyName,
           values.VendorDetails.companyName,
@@ -143,7 +172,7 @@ const Step3Form: React.FC = () => {
           );
           setFieldError(
             'VendorDetails.companyName',
-            'company name should be same as given gst',
+            'Company name should be same as given GST',
           );
           return;
         }
@@ -165,7 +194,7 @@ const Step3Form: React.FC = () => {
         const panData = response.data;
         const verifiedPanName = panData.full_name;
         let nameToValidateAgainst = '';
-
+        setFieldValue('VendorDetails.verifiedPanName', verifiedPanName);
         if (isIndividual) {
           nameToValidateAgainst = values?.VendorDetails?.companyName;
         } else {
@@ -181,12 +210,12 @@ const Step3Form: React.FC = () => {
           if (isIndividual) {
             setFieldError(
               'VendorDetails.companyName',
-              'name should be same as given pan',
+              'Name should be same as given PAN',
             );
           } else {
             setFieldError(
               'VendorDetails.owner_name',
-              'name should be same as given pan',
+              'Name should be same as given PAN',
             );
           }
           return;
@@ -195,7 +224,6 @@ const Step3Form: React.FC = () => {
     } catch {}
   };
 
-  console.log({ errors });
   return (
     <View style={styles.container}>
       <Loader visible={isGSTChecking} />
@@ -224,15 +252,26 @@ const Step3Form: React.FC = () => {
                     error={(errors?.kycDetails as any)?.gstNo}
                   />
                 </View>
-                <Button
-                  mode="contained"
-                  style={styles.verifyButton}
-                  labelStyle={styles.buttonLabel}
-                  onPress={handleVerifyGstNumber}
-                >
-                  Verify
-                </Button>
+                {isGSTVerifyButtonActive && (
+                  <Button
+                    mode="contained"
+                    style={styles.verifyButton}
+                    labelStyle={styles.buttonLabel}
+                    onPress={handleVerifyGstNumber}
+                    disabled={!isGSTVerifyButtonActive}
+                    loading={verfyGstLoading}
+                  >
+                    Verify
+                  </Button>
+                )}
               </View>
+              {isGSTVerified && (
+                <View>
+                  <Text style={styles.successText}>
+                    ✅ {values?.VendorDetails?.verifiedCompanyName}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -260,15 +299,26 @@ const Step3Form: React.FC = () => {
                   error={(errors?.kycDetails as any)?.panNo}
                 />
               </View>
-              <Button
-                mode="contained"
-                style={styles.verifyButton}
-                labelStyle={styles.buttonLabel}
-                onPress={handleVerifyPanNumber}
-              >
-                Verify
-              </Button>
+              {isPANVerifyButtonActive && (
+                <Button
+                  mode="contained"
+                  style={styles.verifyButton}
+                  labelStyle={styles.buttonLabel}
+                  onPress={handleVerifyPanNumber}
+                  disabled={!isPANVerifyButtonActive}
+                  loading={verfyPanLoading}
+                >
+                  Verify
+                </Button>
+              )}
             </View>
+            {isPANVerified && (
+              <View>
+                <Text style={styles.successText}>
+                  ✅ {values?.VendorDetails?.verifiedPanName}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
