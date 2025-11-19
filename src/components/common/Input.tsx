@@ -8,14 +8,18 @@ interface Inputprops extends TextInputProps {
 
 const Input: React.FC<Inputprops> = ({ error, ...props }) => {
   return (
-    <View style={{ marginBottom: 16 }}>
+    <View style={{ marginBottom: 16, position: 'relative' }}>
       <TextInput {...props} error={!!error} />
 
       {/* ERROR MESSAGE */}
       {error ? (
         <Text
-          style={{ color: '#D32F2F', fontSize: 12, marginTop: 4 }}
-          numberOfLines={1}
+          style={{
+            color: '#D32F2F',
+            fontSize: 12,
+            position: 'absolute',
+            top: 60,
+          }}
         >
           {error}
         </Text>

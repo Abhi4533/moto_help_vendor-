@@ -99,23 +99,33 @@ export const StepThreeSchema = Yup.object({
   VendorDetails: Yup.object({
     vehicle_count: Yup.number()
       .required('Number of vehicles is required')
-      .min(0, 'Cannot be negative')
-      .max(100, 'Too many vehicles'),
+      .min(1, 'At least 1 Vehicle required'),
   }),
 
-  VehicleDetails: Yup.array().of(
-    Yup.object({
-      vehicle_number: Yup.string()
-        .required('RC required')
-        .matches(
-          /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/,
-          'Enter valid vehicle registration (e.g. MH12AB1234)',
-        ),
-      vehicle_weight: Yup.string()
-        .required('Weight required')
-        .matches(/^\d+$/, 'Enter numeric weight'),
-    }),
-  ),
+  VehicleDetails: Yup.array()
+    .of(
+      Yup.object({
+        vehicle_number: Yup.string()
+          .required('RC required')
+          .matches(
+            /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/,
+            'Enter valid vehicle registration (e.g. MH12AB1234)',
+          ),
+        vehicle_weight: Yup.string()
+          .required('Weight required')
+          .matches(/^\d+$/, 'Enter numeric weight'),
+      }),
+    )
+    .min(1, 'At least one authorized person required')
+    .test(
+      'unique-contact',
+      'Duplicate RC numbers are not allowed',
+      function (vehicles) {
+        if (!vehicles) return true;
+        const numbers = vehicles.map(e => e.vehicle_number?.trim());
+        return new Set(numbers).size === numbers.length;
+      },
+    ),
 
   kycDetails: Yup.object({
     gstNo: Yup.string().when('VendorDetails.companyType', {

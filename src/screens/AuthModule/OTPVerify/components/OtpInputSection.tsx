@@ -118,13 +118,13 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
       if (!!resp?.userDetails?.vendor_onboarded) {
         dispatch(loginSuccess({ token: resp?.userDetails?.vendorid }));
         if (!!resp?.userDetails?.kyc_verify) {
-          navigation.navigate('TemporaryDashboard');
+          navigation.replace('TemporaryDashboard');
         } else {
           dispatch(setKycStatus('COMPLETED'));
-          navigation.navigate('Dashboard');
+          navigation.replace('Dashboard');
         }
       } else {
-        navigation.navigate('Register', { phoneNumber });
+        navigation.replace('Register', { phoneNumber });
       }
     } else {
       setOtp(['', '', '', '']);

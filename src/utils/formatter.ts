@@ -9,6 +9,7 @@ export const formatPhone = (number: string): string => {
     6,
   )} ${cleanNumber.slice(6, 10)}`;
 };
+
 export const capitalize = (text: string) =>
   text.charAt(0).toUpperCase() + text.slice(1);
 export const formatCurrency = (amount: number) => `₹${amount.toFixed(2)}`;

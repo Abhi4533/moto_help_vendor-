@@ -108,6 +108,45 @@ export const api = createApi({
         body: queryArg,
       }),
     }),
+    getDesignationList: builder.query<any, void>({
+      query: queryArg => ({
+        url: '/Designations',
+        method: 'POST',
+        body: queryArg,
+      }),
+      transformResponse: (response: {
+        status: string;
+        message: string;
+        data: any[];
+      }) => {
+        return {
+          ...response,
+          data: response.data
+            .filter(item => item?.Designation && item?.Designation !== 'NA') // optional: remove invalid entries
+            .map(item => ({
+              label: item?.Designation?.trim(),
+              value: item?.Designation?.trim(), // or use a code if you have one later
+            })),
+        };
+      },
+    }),
+    checkAlreadyExists: builder.mutation<
+      any,
+      {
+        vendorid?: string;
+        gstNo?: string;
+        panNo?: string;
+        aadharNo?: string;
+        driving_license_no?: string;
+        registration_no?: string;
+      }
+    >({
+      query: queryArg => ({
+        url: `/Vendor_KYC_Check`,
+        method: 'POST',
+        body: queryArg,
+      }),
+    }),
   }),
 });
 
@@ -118,6 +157,8 @@ export const {
   useGetTalukaQuery,
   useVerifyGSTMutation,
   useVerifyPANMutation,
+  useGetDesignationListQuery,
+  useCheckAlreadyExistsMutation,
 } = api;
 
 export default api;

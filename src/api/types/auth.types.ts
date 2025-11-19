@@ -70,6 +70,7 @@ export interface VendorEmployeeDetails {
   website: string;
   username: string;
   password: string;
+  customDesignation?: string;
 }
 
 export interface VehicleDetails {
