@@ -5,7 +5,7 @@ import { PersistConfig } from 'redux-persist';
 const persistConfig: PersistConfig<any> = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['auth', 'app', 'kyc'], // add slices you want
+  whitelist: ['auth', 'app', 'kyc', 'validatedVehicles'], // add slices you want
 };
 
 export default persistConfig;

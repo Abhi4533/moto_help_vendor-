@@ -1,32 +1,30 @@
 // CustomBottomTab.tsx
+import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
-import { TAB_ITEMS, TabKey } from './helper';
+import { TAB_ITEMS } from './helper';
 
-interface Props {
-  activeTab: TabKey;
-  onTabChange: (tab: TabKey) => void;
-}
+const CustomBottomTab: React.FC = () => {
+  const navigation = useNavigation<any>();
+  const route = useRoute();
 
-const CustomBottomTab: React.FC<Props> = ({ activeTab, onTabChange }) => {
   return (
     <View style={styles.container}>
       {TAB_ITEMS.map(tab => {
-        const focused = tab.id === activeTab;
+        const focused = tab.id === route?.name;
 
         return (
           <TouchableOpacity
             key={tab.id}
             style={styles.tabItem}
-            onPress={() => onTabChange(tab.id)}
+            onPress={() => navigation.navigate(tab.id)}
           >
             <Icon
               source={tab.icon}
               size={26}
               color={focused ? '#1E88E5' : '#666'}
             />
-
             <Text
               style={{
                 fontSize: 12,
@@ -51,10 +49,6 @@ const styles = StyleSheet.create({
     height: 64,
     backgroundColor: '#fff',
     elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: -2 },
   },
   tabItem: {
     flex: 1,

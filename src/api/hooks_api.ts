@@ -147,6 +147,80 @@ export const api = createApi({
         body: queryArg,
       }),
     }),
+    validateVehicle: builder.mutation<
+      any,
+      {
+        rc_number: string;
+      }
+    >({
+      query: queryArg => ({
+        url: `/Vehicle`,
+        method: 'POST',
+        body: queryArg,
+      }),
+      transformResponse: (response: {
+        status: string;
+        message: string;
+        data: any;
+      }) => {
+        const item = response?.data ?? {};
+
+        return {
+          ...response,
+          data: {
+            vendorid: '',
+            vehicleid: '',
+            vehicleDetails: {
+              registrationNo: item?.rc_number || '',
+              registrationDate: item?.registration_date || '',
+              registeredAt: item?.registered_at || '',
+              rcStatus: item?.rc_status || '',
+              ownerName: item?.owner_name || '',
+              fatherName: item?.father_name || '',
+              presentAddress: item?.present_address || '',
+              permanentAddress: item?.permanent_address || '',
+              mobileNumber: item?.mobile_number || '',
+              vehicleCategory: item?.vehicle_category || '',
+              vehicleCategoryDescription:
+                item?.vehicle_category_description || '',
+              vehicleManufacturer: item?.maker_description || '',
+              makerModel: item?.maker_model || '',
+              bodyType: item?.body_type || '',
+              fuelType: item?.fuel_type || '',
+              manufacturingDate: item?.manufacturing_date || '',
+              chassisNumber: item?.vehicle_chasi_number || '',
+              engineNumber: item?.vehicle_engine_number || '',
+              cubicCapacity: item?.cubic_capacity || 0,
+              vehicleGrossWeight: item?.vehicle_gross_weight || 0,
+              unladenWeight: item?.unladen_weight || 0,
+              noCylinders: item?.no_cylinders || 0,
+              seatCapacity: item?.seat_capacity || 0,
+              fitUpto: item?.fit_up_to || '',
+              insuranceUpto: item?.insurance_upto || '',
+              taxUpto: item?.tax_upto || '',
+              taxPaidUpto: item?.tax_paid_upto || '',
+              puccNumber: item?.pucc_number || '',
+              puccUpto: item?.pucc_upto || '',
+              permitNumber: item?.permit_number || '',
+              permitType: item?.permit_type || '',
+              permitValidFrom: item?.permit_valid_from || '',
+              permitValidUpto: item?.permit_valid_upto || '',
+            },
+            VehicleTypesDetails: {
+              vehicleCategory: item?.vehicle_category_description || '',
+              vehicleType: item?.vehicle_category || '',
+              emptyVehicleWeight: parseFloat(item?.unladen_weight) || 0,
+              loadingCapacityGVW: parseFloat(item?.vehicle_gross_weight) || 0,
+              loadingCapacityCubic: item?.cubic_capacity || '',
+              topRemovable: false,
+            },
+            vehiclePhotos: {
+              photo_url: '',
+            },
+          },
+        };
+      },
+    }),
   }),
 });
 
@@ -159,6 +233,7 @@ export const {
   useVerifyPANMutation,
   useGetDesignationListQuery,
   useCheckAlreadyExistsMutation,
+  useValidateVehicleMutation,
 } = api;
 
 export default api;

@@ -117,7 +117,9 @@ const OtpScreen: React.FC<OtpScreenProps> = ({ phoneNumber }) => {
     if (resp?.status === '00') {
       if (!!resp?.userDetails?.vendor_onboarded) {
         dispatch(loginSuccess({ token: resp?.userDetails?.vendorid }));
-        if (!!resp?.userDetails?.kyc_verify) {
+        console.log({ resp });
+        if (!resp?.userDetails?.kyc_verify) {
+          dispatch(setKycStatus('PENDING'));
           navigation.replace('TemporaryDashboard');
         } else {
           dispatch(setKycStatus('COMPLETED'));

@@ -1,5 +1,7 @@
+import { getDrivers } from '@api/endpoints/driver.api';
+import { getVehicles } from '@api/endpoints/vehicle.api';
 import { RootState } from '@store/index';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Icon } from 'react-native-paper';
 import { useSelector } from 'react-redux';
@@ -22,8 +24,27 @@ const TemporaryDashboard = () => {
     { key: 'driver', label: 'Driver', completed: driverDone },
     { key: 'kyc', label: 'KYC', completed: false },
   ];
+  // API fetch
+  const fetchData = useCallback(async () => {
+    try {
+      if (!venderId) {
+        return;
+      }
 
-  useEffect(() => {}, [venderId]);
+      const response = await getDrivers({ vendorid: venderId });
+      if (response?.status === '00') {
+        setDriverCount(response?.data?.length || 0);
+      }
+      const response1 = await getVehicles({ vendorid: venderId });
+      if (response1?.status === '00') {
+        setVehicleCount(response1?.data?.length || 0);
+      }
+    } catch (err: any) {}
+  }, [venderId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return (
     <TemporaryDashboardLayout>

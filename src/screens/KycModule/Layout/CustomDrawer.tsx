@@ -1,29 +1,32 @@
 // CustomDrawer.tsx
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { logout } from '@store/slices/authSlice';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Avatar, Drawer, Text } from 'react-native-paper';
-
-export type DrawerKey =
-  | 'dashboard'
-  | 'vehicles'
-  | 'drivers'
-  | 'ekyc'
-  | 'logout';
+import { useDispatch } from 'react-redux';
 
 interface Props {
   visible: boolean;
-  active: DrawerKey;
-  onSelect: (key: DrawerKey) => void;
+  onSelect: (value: boolean) => void;
 }
 
-const CustomDrawer: React.FC<Props> = ({ visible, active, onSelect }) => {
+const CustomDrawer: React.FC<Props> = ({ visible, onSelect }) => {
   if (!visible) return null;
+
+  const dispatch = useDispatch();
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+
+  const navigateTo = (screen: string) => {
+    onSelect(false);
+    navigation.navigate(screen);
+  };
 
   return (
     <View style={styles.overlay}>
-      {/* Drawer ALWAYS stays on the LEFT */}
       <View style={styles.drawer}>
-        {/* Profile Header */}
+        {/* Profile Section */}
         <View style={styles.profileSection}>
           <Avatar.Image
             size={60}
@@ -35,30 +38,31 @@ const CustomDrawer: React.FC<Props> = ({ visible, active, onSelect }) => {
           <Text style={styles.email}>john@example.com</Text>
         </View>
 
+        {/* Menu Section */}
         <Drawer.Section style={styles.menuSection}>
           <Drawer.Item
             label="Dashboard"
             icon="view-dashboard"
-            active={active === 'dashboard'}
-            onPress={() => onSelect('dashboard')}
+            active={route?.name === 'TemporaryDashboard'}
+            onPress={() => navigateTo('TemporaryDashboard')}
           />
           <Drawer.Item
             label="Vehicles"
             icon="truck"
-            active={active === 'vehicles'}
-            onPress={() => onSelect('vehicles')}
+            active={route?.name === 'ValidateVehicle'}
+            onPress={() => navigateTo('ValidateVehicle')}
           />
           <Drawer.Item
             label="Drivers"
             icon="account-group"
-            active={active === 'drivers'}
-            onPress={() => onSelect('drivers')}
+            active={route?.name === 'DriverList'}
+            onPress={() => navigateTo('DriverList')}
           />
           <Drawer.Item
             label="eKYC"
             icon="shield-account"
-            active={active === 'ekyc'}
-            onPress={() => onSelect('ekyc')}
+            active={route?.name === 'BankVerification'}
+            onPress={() => navigateTo('BankVerification')}
           />
         </Drawer.Section>
 
@@ -66,15 +70,15 @@ const CustomDrawer: React.FC<Props> = ({ visible, active, onSelect }) => {
           <Drawer.Item
             label="Logout"
             icon="logout"
-            onPress={() => onSelect('logout')}
+            onPress={() => dispatch(logout())}
           />
         </Drawer.Section>
       </View>
 
-      {/* Dark Background on right side */}
+      {/* Background Overlay */}
       <TouchableOpacity
         style={styles.background}
-        onPress={() => onSelect(active)}
+        onPress={() => onSelect(false)}
       />
     </View>
   );
@@ -85,11 +89,10 @@ export default CustomDrawer;
 const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
+    flexDirection: 'row',
     width: '100%',
     height: '100%',
-    flexDirection: 'row', // LEFT -> RIGHT
   },
-
   drawer: {
     width: 280,
     backgroundColor: '#fff',
@@ -97,16 +100,13 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     height: '100%',
   },
-
   background: {
     flex: 1,
     backgroundColor: '#00000066',
   },
-
   profileSection: {
     alignItems: 'center',
     marginBottom: 20,
-    paddingHorizontal: 16,
   },
   name: {
     marginTop: 10,
