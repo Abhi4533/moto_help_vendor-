@@ -2,6 +2,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
 import { Modal, Platform, TouchableWithoutFeedback, View } from 'react-native';
 import { Button, HelperText, TextInput } from 'react-native-paper';
+import Input from './Input';
 
 interface DatePickerFieldProps {
   label: string;
@@ -121,16 +122,17 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({
   // For Android - use default approach
   return (
     <View>
-      <TextInput
+      <Input
         label={label}
         value={displayValue}
         mode="outlined"
-        style={{ marginBottom: 8 }}
         left={<TextInput.Icon icon="calendar" />}
         onFocus={showPicker}
         showSoftInputOnFocus={false}
-        error={!!error && touched}
+        error={error}
+        onPress={showPicker}
         editable={!editable}
+        cursorColor="#fff"
       />
 
       {showDatePicker && (
@@ -143,10 +145,6 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({
           minimumDate={minimumDate}
         />
       )}
-
-      <HelperText type="error" visible={!!error && !!touched}>
-        {error}
-      </HelperText>
     </View>
   );
 };

@@ -7,16 +7,20 @@ import CustomDrawer from './CustomDrawer';
 
 interface Props {
   children: React.ReactNode;
+  title?: string;
 }
 
-const TemporaryDashboardLayout: FC<Props> = ({ children }) => {
+const TemporaryDashboardLayout: FC<Props> = ({
+  children,
+  title = 'Temporary Dashboard',
+}) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
 
   return (
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.Action icon="menu" onPress={() => setDrawerVisible(true)} />
-        <Appbar.Content title="Temporary Dashboard" />
+        <Appbar.Content title={title} titleStyle={{ fontWeight: '700' }} />
       </Appbar.Header>
 
       <View style={styles.content}>{children}</View>
@@ -32,5 +36,5 @@ export default TemporaryDashboardLayout;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flex: 1 },
+  content: { flex: 1, overflow: 'hidden' },
 });

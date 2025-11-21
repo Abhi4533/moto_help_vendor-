@@ -59,7 +59,7 @@ const CustomDrawer: React.FC<Props> = ({ visible, onSelect }) => {
             onPress={() => navigateTo('DriverList')}
           />
           <Drawer.Item
-            label="eKYC"
+            label="Bank Details"
             icon="shield-account"
             active={route?.name === 'BankVerification'}
             onPress={() => navigateTo('BankVerification')}

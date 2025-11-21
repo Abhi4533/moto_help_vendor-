@@ -221,6 +221,20 @@ export const api = createApi({
         };
       },
     }),
+    validateLicence: builder.mutation<any, any>({
+      query: queryArg => ({
+        url: '/DrivingLicense',
+        method: 'POST',
+        body: queryArg,
+      }),
+    }),
+    validateBank: builder.mutation<any, any>({
+      query: queryArg => ({
+        url: '/vendor_Bank_kyc',
+        method: 'POST',
+        body: queryArg,
+      }),
+    }),
   }),
 });
 
@@ -234,6 +248,8 @@ export const {
   useGetDesignationListQuery,
   useCheckAlreadyExistsMutation,
   useValidateVehicleMutation,
+  useValidateLicenceMutation,
+  useValidateBankMutation,
 } = api;
 
 export default api;

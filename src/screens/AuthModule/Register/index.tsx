@@ -33,10 +33,7 @@ const Register: React.FC = () => {
   const [step, setStep] = useState(1);
 
   const handleSubmit = async (values: any) => {
-    console.log({ values });
-
     const payload = JSON.parse(JSON.stringify(values));
-
     delete payload.VendorDetails.verifiedCompanyName;
     delete payload.VendorDetails.verifiedPanName;
 

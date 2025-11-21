@@ -1,529 +1,483 @@
-import { useGetDistrictQuery, useGetStateQuery } from '@api/hooks_api';
-import DatePickerField from '@components/common/DatePickerField';
-import Dropdown from '@components/common/Dropdown';
-import Input from '@components/common/Input';
+// AddDriverModal.tsx
 import Icon from '@react-native-vector-icons/material-design-icons';
 import { Formik } from 'formik';
-import { FC } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Button, Card, HelperText, Text, TextInput } from 'react-native-paper';
+import { Button, Card, Text, TextInput } from 'react-native-paper';
+import Toast from 'react-native-toast-message';
+import { useSelector } from 'react-redux';
 
-interface AddDriverModalProps {
-  setModalVisible: any;
-  modalVisible: any;
-}
+import DatePickerField from '@components/common/DatePickerField';
+import Dropdown from '@components/common/Dropdown';
+import Input from '@components/common/Input';
+import Loader from '@components/common/Loader';
+
+import { addDriver } from '@api/endpoints/driver.api';
+import {
+  useCheckAlreadyExistsMutation,
+  useGetAddressByPinMutation,
+  useGetDistrictQuery,
+  useGetStateQuery,
+  useValidateLicenceMutation,
+} from '@api/hooks_api';
+import { useDebouncedCallback } from '@hooks/useDebounce';
+import { RootState } from '@store/index';
+import {
+  DriverSchema,
+  getDriverAge,
+  INITIAL_VALUES,
+  isValidDL,
+  maxDOB,
+  minDOB,
+} from '../helper';
+import { AddDriverModalProps, DriverFormValues } from '../type';
 
 const AddDriverModal: FC<AddDriverModalProps> = ({
   setModalVisible,
   modalVisible,
+  onDriverAdded,
 }) => {
-  const { data: stateData, isLoading: stateLoading } = useGetStateQuery();
-  const { data: districtData, isLoading: districtLoading } =
-    useGetDistrictQuery({
-      state: '',
-    });
+  // API hooks
+  const [getAddressByPincode] = useGetAddressByPinMutation();
+  const vendorId = useSelector((state: RootState) => state?.auth?.token);
+  const [checkAlreadyExists, { isLoading: isCheckingExist }] =
+    useCheckAlreadyExistsMutation();
+  const [validateLicence, { isLoading: isValidating }] =
+    useValidateLicenceMutation();
+
+  const { data: stateData } = useGetStateQuery();
+  const [selectedState, setSelectedState] = useState<string>('');
+  const { data: districtData } = useGetDistrictQuery(
+    { state: selectedState },
+    { skip: !selectedState },
+  );
+
+  const debouncedCheckExists = useDebouncedCallback(
+    async (license: string, setFieldError?: any) => {
+      try {
+        if (!isValidDL(license)) return;
+        const resp = await checkAlreadyExists({
+          driving_license_no: license,
+        }).unwrap();
+        if (resp?.status === '01') {
+          setFieldError('driving_license_no', 'DL Number Already Registered');
+        }
+      } catch (err: any) {}
+    },
+    900,
+  );
+
+  const validateDL = useCallback(
+    async (
+      values: DriverFormValues,
+      setFieldError: (f: string, m: string) => void,
+      setFieldValue: (f: string, v: any) => void,
+    ) => {
+      const dl = values?.driving_license_no?.trim();
+      try {
+        const payload = { dl_number: dl, dob: values.dob };
+        const resp = await validateLicence(payload).unwrap();
+        if (resp?.status === '00') {
+          if (resp?.data?.status !== 'id_not_found') {
+            Toast.show({ type: 'success', text1: 'DL validated' });
+            const d = resp?.data;
+            if (d) {
+              if (d?.nt_validity_to || d?.t_validity_to) {
+                setFieldValue(
+                  'expiry_date',
+                  d?.nt_validity_to || d?.t_validity_to,
+                );
+              }
+              if (d?.address)
+                setFieldValue('driving_license_address', d?.address);
+              if (d?.name) setFieldValue('full_name', d?.name);
+            }
+          } else {
+            setFieldError('driving_license_no', 'Invalid DL Number');
+            setFieldError('dob', 'Invalid DOB');
+          }
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: resp?.message || 'Validation failed',
+          });
+        }
+      } catch (err: any) {}
+    },
+    [validateLicence],
+  );
+
+  const handleSubmit = useCallback(
+    async (
+      values: DriverFormValues,
+      { setSubmitting }: { setSubmitting: (b: boolean) => void },
+    ) => {
+      try {
+        const resp = await addDriver({
+          ...values,
+          vendorid: vendorId,
+        });
+        if (resp?.status === '00') {
+          setModalVisible(false);
+          onDriverAdded?.();
+        } else {
+          Toast.show({ type: 'error', text1: resp?.message });
+        }
+      } catch (err) {
+        Toast.show({ type: 'error', text1: 'Create failed' });
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [onDriverAdded, setModalVisible],
+  );
+
+  const handleClose = useCallback(() => {
+    setSelectedState('');
+    setModalVisible(false);
+  }, [setModalVisible]);
+
+  const handlePincodeChange = async (pin: string, setFieldValue: any) => {
+    try {
+      const numericText = pin.replace(/[^0-9]/g, '').substring(0, 6);
+      setFieldValue('pincode', numericText);
+      if (numericText?.length === 6) {
+        const response = await getAddressByPincode({ pincode: numericText });
+        if (response?.data?.status === '00') {
+          const addressData = response.data.data || response.data;
+          setFieldValue('state', addressData?.State?.toLocaleUpperCase() || '');
+          setSelectedState(addressData?.State?.toLocaleUpperCase());
+          setFieldValue('City', addressData?.District?.toLocaleUpperCase());
+        } else {
+          setFieldValue('state', '');
+          setFieldValue('City', '');
+        }
+      }
+    } catch (error) {}
+  };
+
   return (
     <Modal
       visible={modalVisible}
       animationType="slide"
-      transparent={true}
-      onRequestClose={() => setModalVisible(false)}
+      transparent
+      onRequestClose={handleClose}
     >
+      <Loader visible={isCheckingExist || isValidating} />
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add New Driver</Text>
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={styles.closeButton}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <View style={styles.modalContent}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Add New Driver
+              </Text>
+              <TouchableOpacity onPress={handleClose} hitSlop={10}>
+                <Icon name="close" size={22} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            <Formik
+              initialValues={INITIAL_VALUES}
+              validationSchema={DriverSchema}
+              onSubmit={handleSubmit}
             >
-              <Icon name="close" size={24} color="#7f8c8d" />
-            </TouchableOpacity>
-          </View>
-
-          <Formik
-            initialValues={{
-              full_name: '',
-              Phone: '',
-              emergency_phone: '',
-              Email: '',
-              address1: '',
-              address2: '',
-              pincode: '',
-              state: '',
-              City: '',
-              Tahsil: '',
-              driving_license_no: '',
-              driving_license_address: '',
-              dob: '',
-              expiry_date: '',
-              vendorid: '',
-              driver_id: '',
-              Driver_license_photo: '',
-              password: '',
-              status: '',
-              username: '',
-              Driver_photo: '',
-            }}
-            enableReinitialize={true}
-            onSubmit={() => {}}
-          >
-            {({ values, errors }) => (
-              <>
-                <ScrollView style={styles.modalBody}>
-                  <View style={{ flex: 1 }}>
-                    {/* License Information Card */}
-                    <Card
-                      style={{
-                        marginBottom: 12,
-                        elevation: 2,
-                      }}
-                    >
-                      <Card.Content
-                        style={{
-                          paddingVertical: 8,
-                        }}
-                      >
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: 12,
+              {({
+                values,
+                errors,
+                touched,
+                setFieldValue,
+                setFieldError,
+                handleSubmit,
+                isSubmitting,
+                isValid,
+                dirty,
+              }) => (
+                <>
+                  <ScrollView
+                    style={styles.modalBody}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {/* License Section */}
+                    <Card style={styles.card} mode="contained">
+                      <Card.Content style={styles.cardContent}>
+                        <Input
+                          label="Driving License Number *"
+                          value={values.driving_license_no}
+                          mode="outlined"
+                          placeholder="DL1420110002341"
+                          left={<TextInput.Icon icon="card-account-details" />}
+                          onChangeText={(t: string) => {
+                            setFieldValue('driving_license_no', t);
+                            debouncedCheckExists(t, setFieldError);
                           }}
-                        ></View>
+                          error={errors.driving_license_no}
+                          autoCapitalize="characters"
+                        />
 
-                        <View style={{}}>
-                          <View
-                            style={{
-                              flex: 1,
-                            }}
-                          >
-                            <Input
-                              label="Driving License Number *"
-                              value={values.driving_license_no}
-                              mode="outlined"
-                              placeholder="DL1420110002341"
-                              left={
-                                <TextInput.Icon icon="card-account-details" />
-                              }
-                              autoCapitalize="characters"
-                              autoComplete="off"
-                            />
-
-                            {/* License Check Status */}
-                            <View
-                              style={{
-                                marginTop: 4,
-                              }}
-                            ></View>
-                          </View>
-
-                          <View style={{ flex: 1 }}>
-                            <DatePickerField
-                              label="Date of Birth *"
-                              value={values.dob}
-                              onDateChange={date => {}}
-                            />
-                          </View>
-                        </View>
-
-                        <View
-                          style={{
-                            marginVertical: 8,
+                        <DatePickerField
+                          label="Date of Birth *"
+                          value={values.dob}
+                          maximumDate={maxDOB()}
+                          minimumDate={minDOB()}
+                          onDateChange={(d: string | Date) => {
+                            const iso =
+                              typeof d === 'string' ? d : d.toISOString();
+                            setFieldValue('dob', iso);
                           }}
+                          error={errors.dob}
+                        />
+
+                        <Button
+                          mode="contained"
+                          onPress={async () => {
+                            if (errors?.dob || errors?.driving_license_no) {
+                              Toast.show({
+                                type: 'error',
+                                text1:
+                                  errors?.dob || errors?.driving_license_no,
+                              });
+                            } else {
+                              await validateDL(
+                                values as DriverFormValues,
+                                setFieldError,
+                                setFieldValue,
+                              );
+                            }
+                          }}
+                          loading={isValidating}
+                          disabled={isValidating || !!values?.full_name}
+                          compact
                         >
-                          <View
-                            style={{
-                              backgroundColor: '#fff3e0',
-                              padding: 10,
-                              borderRadius: 6,
-                              borderLeftWidth: 4,
-                              borderLeftColor: '#ff9800',
-                            }}
-                          >
+                          Validate License
+                        </Button>
+
+                        {values?.full_name && (
+                          <>
+                            <View style={styles.divider} />
                             <Text
-                              style={{
-                                color: '#e65100',
-                                fontSize: 13,
-                                fontWeight: '500',
-                              }}
+                              variant="titleSmall"
+                              style={styles.sectionLabel}
                             >
-                              Fill both fields above to enable validation
+                              License Details
                             </Text>
-                          </View>
 
-                          <View
-                            style={{
-                              backgroundColor: '#e8f5e8',
-                              padding: 10,
-                              borderRadius: 6,
-                              borderLeftWidth: 4,
-                              borderLeftColor: '#4caf50',
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: '#2e7d32',
-                                fontSize: 13,
-                                fontWeight: '500',
-                              }}
-                            >
-                              Ready to validate license
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View
-                          style={{
-                            marginVertical: 8,
-                          }}
-                        >
-                          <Button
-                            mode="contained"
-                            style={[
-                              {
-                                height: 50,
-                              },
-                            ]}
-                            icon={'check-circle'}
-                            contentStyle={{
-                              paddingVertical: 4,
-                            }}
-                          >
-                            Validate License
-                          </Button>
-                        </View>
-
-                        <View
-                          style={{
-                            marginTop: 16,
-                          }}
-                        >
-                          <View
-                            style={{
-                              height: 1,
-                              backgroundColor: '#e0e0e0',
-                              marginVertical: 16,
-                            }}
-                          />
-                          <Text
-                            variant="titleSmall"
-                            style={{
-                              marginBottom: 12,
-                              color: '#4CAF50',
-                              fontWeight: '600',
-                            }}
-                          >
-                            License Details
-                          </Text>
-
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              gap: 8,
-                              marginBottom: 4,
-                            }}
-                          >
-                            <View style={{ flex: 1 }}>
-                              <DatePickerField
-                                label="License Expiry Date *"
-                                value={values.expiry_date}
-                                onDateChange={() => {}}
-                                error={errors.expiry_date}
-                                minimumDate={new Date()}
-                                editable={true}
+                            <View style={{ flexDirection: 'row', gap: 5 }}>
+                              <View style={{ flex: 1 }}>
+                                <DatePickerField
+                                  label="License Expiry Date"
+                                  value={values.expiry_date}
+                                  onDateChange={(d: string | Date) =>
+                                    setFieldValue(
+                                      'expiry_date',
+                                      typeof d === 'string'
+                                        ? d
+                                        : d.toISOString(),
+                                    )
+                                  }
+                                  minimumDate={new Date()}
+                                  editable
+                                />
+                              </View>
+                              <Input
+                                label="Driver Age"
+                                value={
+                                  getDriverAge(values.dob) >= 0
+                                    ? `${getDriverAge(values.dob)} years`
+                                    : '-'
+                                }
+                                mode="outlined"
+                                editable={false}
                               />
                             </View>
-
-                            <View style={{ flex: 1 }}>
-                              {/* {values.dob && ( */}
-                              <View
-                                style={{
-                                  backgroundColor: '#f5f5f5',
-                                  padding: 12,
-                                  borderRadius: 4,
-                                  borderWidth: 1,
-                                  borderColor: '#e0e0e0',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  height: 56,
-                                }}
-                              >
-                                <Text
-                                  style={{
-                                    fontSize: 12,
-                                    color: '#666',
-                                    marginBottom: 2,
-                                  }}
-                                >
-                                  Driver Age
-                                </Text>
-                                <Text
-                                  style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#2c3e50',
-                                  }}
-                                >
-                                  {(() => {
-                                    const dob = new Date(values.dob);
-                                    const today = new Date();
-                                    let age =
-                                      today.getFullYear() - dob.getFullYear();
-                                    const monthDiff =
-                                      today.getMonth() - dob.getMonth();
-
-                                    if (
-                                      monthDiff < 0 ||
-                                      (monthDiff === 0 &&
-                                        today.getDate() < dob.getDate())
-                                    ) {
-                                      age--;
-                                    }
-
-                                    return `${age} years`;
-                                  })()}
-                                </Text>
-                              </View>
-                              {/* )}     */}
-                            </View>
-                          </View>
-
-                          <TextInput
-                            label="License Address *"
-                            value={values.driving_license_address}
-                            mode="outlined"
-                            multiline
-                            numberOfLines={2}
-                            style={{
-                              marginBottom: 8,
-                              minHeight: 70,
-                            }}
-                            placeholder="Address as per driving license"
-                            left={<TextInput.Icon icon="map-marker" />}
-                            editable={false}
-                          />
-                          <HelperText type="error">
-                            {errors?.driving_license_address}
-                          </HelperText>
-                        </View>
+                            <Input
+                              label="License Address"
+                              value={values.driving_license_address}
+                              mode="outlined"
+                              multiline
+                              numberOfLines={2}
+                              style={styles.textArea}
+                              editable={false}
+                            />
+                          </>
+                        )}
                       </Card.Content>
                     </Card>
 
-                    {/* Rest of your form components remain the same */}
-                    {/* Personal Information Card */}
-                    <Card
-                      style={{
-                        marginBottom: 12,
-                        elevation: 2,
-                      }}
-                    >
-                      <Card.Content
-                        style={{
-                          paddingVertical: 8,
-                        }}
-                      >
-                        <Text
-                          variant="titleLarge"
-                          style={{
-                            color: '#2c3e50',
-                            fontWeight: '600',
-                            fontSize: 18,
-                          }}
-                        >
+                    {/* Personal Info */}
+                    <Card style={styles.card} mode="contained">
+                      <Card.Content style={styles.cardContent}>
+                        <Text variant="titleSmall" style={styles.sectionLabel}>
                           Personal Information
                         </Text>
 
-                        <TextInput
-                          label="Full Name as Per DL *"
+                        <Input
+                          label="Full Name as per DL *"
                           value={values.full_name}
                           mode="outlined"
-                          style={styles.input}
-                          placeholder="John Doe"
-                          left={<TextInput.Icon icon="account" />}
+                          onChangeText={t => setFieldValue('full_name', t)}
+                          error={errors.full_name}
+                          editable={false}
                         />
 
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            gap: 8,
-                            marginBottom: 4,
-                          }}
-                        >
-                          <View style={{ flex: 1 }}>
-                            <TextInput
+                        <View style={styles.row}>
+                          <View style={styles?.flex1}>
+                            <Input
                               label="Phone *"
                               value={values.Phone}
+                              mode="outlined"
                               keyboardType="phone-pad"
                               maxLength={10}
-                              mode="outlined"
-                              placeholder="1234567890"
+                              onChangeText={t => setFieldValue('Phone', t)}
+                              error={errors.Phone}
                             />
                           </View>
 
-                          <View style={{ flex: 1 }}>
-                            <TextInput
+                          <View style={styles?.flex1}>
+                            <Input
                               label="Family Contact *"
                               value={values.emergency_phone}
+                              mode="outlined"
                               keyboardType="phone-pad"
                               maxLength={10}
-                              mode="outlined"
-                              placeholder="1234567890"
+                              onChangeText={t =>
+                                setFieldValue('emergency_phone', t)
+                              }
+                              error={errors.emergency_phone}
                             />
                           </View>
                         </View>
 
-                        <TextInput
+                        <Input
                           label="Email"
                           value={values.Email}
-                          keyboardType="email-address"
                           mode="outlined"
-                          style={styles.input}
-                          placeholder="john.doe@example.com"
-                          left={<TextInput.Icon icon="email" />}
+                          onChangeText={t => setFieldValue('Email', t)}
+                          keyboardType="email-address"
+                          error={errors.Email}
                         />
                       </Card.Content>
                     </Card>
 
-                    {/* Address Information Card */}
-                    <Card
-                      style={{
-                        marginBottom: 12,
-                        elevation: 2,
-                      }}
-                    >
-                      <Card.Content
-                        style={{
-                          paddingVertical: 8,
-                        }}
-                      >
-                        <Text
-                          variant="titleLarge"
-                          style={{
-                            color: '#2c3e50',
-                            fontWeight: '600',
-                            fontSize: 18,
-                          }}
-                        >
+                    {/* Address */}
+                    <Card style={styles.card} mode="contained">
+                      <Card.Content style={styles.cardContent}>
+                        <Text variant="titleSmall" style={styles.sectionLabel}>
                           Current Address
                         </Text>
 
-                        <TextInput
-                          label="Building, Apartment, Plot Number *"
+                        <Input
+                          label="Building, Apartment *"
+                          mode="outlined"
                           value={values.address1}
-                          mode="outlined"
-                          style={styles.input}
-                          placeholder="Building name/number"
-                          left={<TextInput.Icon icon="home" />}
+                          onChangeText={t => setFieldValue('address1', t)}
+                          error={errors.address1}
+                          autoCapitalize="characters"
                         />
 
-                        <TextInput
-                          label="Area, Street, Sector, Village"
+                        <Input
+                          label="Street, Area"
+                          mode="outlined"
                           value={values.address2}
-                          mode="outlined"
-                          style={styles.input}
-                          placeholder="Area details"
-                          left={<TextInput.Icon icon="map-marker" />}
+                          onChangeText={t => setFieldValue('address2', t)}
+                          error={errors.address2}
+                          autoCapitalize="characters"
                         />
 
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            gap: 8,
-                            marginBottom: 4,
-                          }}
-                        >
-                          <View style={{ flex: 1 }}>
-                            <TextInput
+                        <View style={styles.row}>
+                          <View style={styles?.flex1}>
+                            <Input
                               label="Pincode *"
                               value={values.pincode}
-                              keyboardType="number-pad"
-                              maxLength={6}
                               mode="outlined"
-                              placeholder="110001"
-                              left={<TextInput.Icon icon="map-marker" />}
+                              maxLength={6}
+                              keyboardType="number-pad"
+                              onChangeText={t =>
+                                handlePincodeChange(t, setFieldValue)
+                              }
+                              error={errors?.pincode}
                             />
                           </View>
-
-                          <View style={{ flex: 1 }}>
-                            <TextInput
+                          <View style={styles?.flex1}>
+                            <Input
                               label="Town/Tahsil *"
                               value={values.Tahsil}
+                              mode="outlined"
+                              onChangeText={t => setFieldValue('Tahsil', t)}
+                              style={styles.flex1}
+                              error={errors.Tahsil}
+                              autoCapitalize="characters"
                             />
                           </View>
                         </View>
 
-                        <View style={{}}>
-                          <View style={{ flex: 1 }}>
-                            <View
-                              style={{
-                                marginBottom: 8,
-                                zIndex: 1000,
-                              }}
-                            >
-                              <Dropdown
-                                label="State *"
-                                data={stateData?.data || []}
-                                value={values.state}
-                                onChange={val => {}}
-                              />
-                            </View>
-                          </View>
+                        <Dropdown
+                          label="State *"
+                          data={stateData?.data || []}
+                          value={values.state}
+                          onChange={val => {
+                            setFieldValue('state', val);
+                            setSelectedState(val as string);
+                            setFieldValue('City', '');
+                          }}
+                          error={!!touched.state && !!errors.state}
+                          errorMessage={errors?.state}
+                        />
 
-                          <View style={{ flex: 1 }}>
-                            <View
-                              style={{
-                                marginBottom: 8,
-                                zIndex: 1000,
-                              }}
-                            >
-                              <Dropdown
-                                label="Select District *"
-                                data={districtData?.data || []}
-                                value={values.City}
-                                onChange={val => {}}
-                                disabled={stateData?.data?.length === 0}
-                              />
-                            </View>
-                          </View>
-                        </View>
+                        <Dropdown
+                          label="District *"
+                          data={districtData?.data || []}
+                          value={values.City}
+                          onChange={val => setFieldValue('City', val)}
+                          disabled={!selectedState}
+                          error={!!touched.City && !!errors.City}
+                          errorMessage={errors?.City}
+                        />
                       </Card.Content>
                     </Card>
+                  </ScrollView>
 
-                    {/* Action Buttons */}
+                  {/* Footer */}
+                  <View style={styles.modalFooter}>
+                    <Button
+                      mode="outlined"
+                      onPress={handleClose}
+                      style={styles.flex1}
+                      compact
+                    >
+                      Cancel
+                    </Button>
+                    <View style={styles.spacer} />
+                    <Button
+                      mode="contained"
+                      onPress={() => handleSubmit()}
+                      loading={isSubmitting}
+                      disabled={
+                        isSubmitting || !isValid || !dirty || !values?.full_name
+                      }
+                      style={styles.flex1}
+                      compact
+                    >
+                      Add Driver
+                    </Button>
                   </View>
-                </ScrollView>
-
-                <View style={styles.modalFooter}>
-                  <Button
-                    mode="outlined"
-                    onPress={() => setModalVisible(false)}
-                    style={styles.cancelButton}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    mode="contained"
-                    onPress={() => {
-                      // Handle add driver logic here
-                      setModalVisible(false);
-                    }}
-                    style={styles.submitButton}
-                  >
-                    Add Driver
-                  </Button>
-                </View>
-              </>
-            )}
-          </Formik>
-        </View>
+                </>
+              )}
+            </Formik>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -532,56 +486,87 @@ const AddDriverModal: FC<AddDriverModalProps> = ({
 export default AddDriverModal;
 
 const styles = StyleSheet.create({
-  // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  keyboardView: {
+    flex: 1,
     justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '95%',
+    height: '90%',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
+    borderBottomColor: '#f1f5f9',
   },
   modalTitle: {
-    fontSize: 18,
     fontWeight: '600',
-    color: '#2c3e50',
-  },
-  closeButton: {
-    padding: 4,
+    color: '#1f2937',
   },
   modalBody: {
-    padding: 20,
+    paddingHorizontal: 16,
+    maxHeight: '75%',
   },
-  input: {
-    marginBottom: 16,
-    backgroundColor: '#fff',
+  card: {
+    marginBottom: 12,
+    elevation: 1,
+  },
+  cardContent: {
+    paddingVertical: 8,
+  },
+  validateButton: {
+    marginTop: 4,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 8,
+  },
+  sectionLabel: {
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 4,
+  },
+  ageBadge: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 5,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+  },
+  ageValue: {
+    fontWeight: '700',
+    color: '#1e40af',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  flex1: {
+    flex: 1,
+  },
+  textArea: {
+    minHeight: 64,
   },
   modalFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
+    borderTopColor: '#f1f5f9',
   },
-  cancelButton: {
-    flex: 1,
-    marginRight: 8,
-    borderColor: '#bdc3c7',
-  },
-  submitButton: {
-    flex: 1,
-    marginLeft: 8,
-    backgroundColor: '#3498db',
+  spacer: {
+    width: 12,
   },
 });

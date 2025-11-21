@@ -191,7 +191,7 @@ const ValidateVehicle = () => {
   };
 
   return (
-    <TemporaryDashboardLayout>
+    <TemporaryDashboardLayout title="Validate Vehicles">
       <View style={styles.container}>
         <Loader visible={loading && !refreshing} />
 

@@ -32,11 +32,8 @@ const DriverList = () => {
     async (isRefresh = false) => {
       try {
         if (!vendorId) return;
-
         isRefresh ? setRefreshing(true) : setLoading(true);
-
         const response = await getDrivers({ vendorid: vendorId });
-
         if (response?.status === '00') {
           const drivers = response?.data || [];
           setDriverData(drivers);
@@ -64,7 +61,6 @@ const DriverList = () => {
       const filtered = driverData.filter(driver => {
         const details = driver?.DriverDetails;
         const searchLower = searchQuery.toLowerCase();
-
         return (
           details?.full_name?.toLowerCase().includes(searchLower) ||
           details?.Phone?.includes(searchQuery) ||
@@ -80,11 +76,11 @@ const DriverList = () => {
   };
 
   return (
-    <TemporaryDashboardLayout>
+    <TemporaryDashboardLayout title="Driver List">
       <View style={styles.container}>
         {/* Header with Add Button */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Drivers</Text>
+          <Text style={styles.headerTitle}>Registered Drivers</Text>
           <Button
             mode="contained"
             onPress={() => setModalVisible(true)}
@@ -182,6 +178,7 @@ const DriverList = () => {
         <AddDriverModal
           modalVisible={modalVisible}
           setModalVisible={setModalVisible}
+          onDriverAdded={() => fetchData()}
         />
       </View>
     </TemporaryDashboardLayout>

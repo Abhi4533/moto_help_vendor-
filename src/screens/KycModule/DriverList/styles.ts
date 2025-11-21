@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#2c3e50',
   },
   addButton: {
