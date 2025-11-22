@@ -23,6 +23,8 @@ const Step3Form: React.FC = () => {
   const { values, setFieldValue, setFieldError, errors } = useFormikContext<
     VendorRegistrationRequest & any
   >();
+
+  console.log({ errors });
   const [verifyGST, { isLoading: verfyGstLoading }] = useVerifyGSTMutation();
   const [verifyPan, { isLoading: verfyPanLoading }] = useVerifyPANMutation();
   const [checkAlreadyExists, { isLoading: isGSTChecking }] =

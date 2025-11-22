@@ -171,7 +171,6 @@ const Dropdown: React.FC<Props> = ({
             mode="outlined"
             value={displayLabel}
             editable={false}
-            disabled={disabled}
             error={error} // 👈 Paper error styling
             right={
               <TextInput.Icon
@@ -186,11 +185,7 @@ const Dropdown: React.FC<Props> = ({
                 )}
               />
             }
-            style={[
-              styles.input,
-              disabled && styles.inputDisabled,
-              error && styles.inputError,
-            ]}
+            style={[styles.input, error && styles.inputError]}
           />
         </View>
       </TouchableOpacity>

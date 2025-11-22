@@ -27,7 +27,10 @@ const CustomDrawer: React.FC<Props> = ({ visible, onSelect }) => {
     <View style={styles.overlay}>
       <View style={styles.drawer}>
         {/* Profile Section */}
-        <View style={styles.profileSection}>
+        <TouchableOpacity
+          style={styles.profileSection}
+          onPress={() => navigateTo('ProfileNavigator')}
+        >
           <Avatar.Image
             size={60}
             source={{
@@ -36,7 +39,7 @@ const CustomDrawer: React.FC<Props> = ({ visible, onSelect }) => {
           />
           <Text style={styles.name}>John Doe</Text>
           <Text style={styles.email}>john@example.com</Text>
-        </View>
+        </TouchableOpacity>
 
         {/* Menu Section */}
         <Drawer.Section style={styles.menuSection}>

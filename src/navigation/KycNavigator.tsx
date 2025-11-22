@@ -4,6 +4,8 @@ import BankVerification from '@screens/KycModule/BankVerification';
 import TemporaryDashboard from '@screens/KycModule/Dashboard';
 import DriverList from '@screens/KycModule/DriverList';
 import ValidateVehicle from '@screens/KycModule/ValidateVehicle';
+import ProfileNavigator from '@screens/Profile';
+
 import React from 'react';
 
 export type KycStackParamList = {
@@ -11,6 +13,7 @@ export type KycStackParamList = {
   ValidateVehicle: undefined;
   DriverList: undefined;
   BankVerification: undefined;
+  ProfileNavigator: undefined;
 };
 
 const Stack = createNativeStackNavigator<KycStackParamList>();
@@ -21,6 +24,7 @@ const KycNavigator = () => (
     <Stack.Screen name="ValidateVehicle" component={ValidateVehicle} />
     <Stack.Screen name="DriverList" component={DriverList} />
     <Stack.Screen name="BankVerification" component={BankVerification} />
+    <Stack.Screen name="ProfileNavigator" component={ProfileNavigator} />
   </Stack.Navigator>
 );
 

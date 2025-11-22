@@ -1,4 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ProfileNavigator from '@screens/Profile';
 import React from 'react';
 import MainDashboard from '../screens/Dashboard/MainDashboard';
 // import MainDashboard from '../screens/Dashboard/MainDashboard';
@@ -13,6 +14,7 @@ export type MainStackParamList = {
   Drivers: undefined;
   Assign: undefined;
   Available: undefined;
+  ProfileNavigator: undefined;
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -24,6 +26,7 @@ const MainNavigator = () => (
     <Stack.Screen name="Drivers" component={MainDashboard} />
     <Stack.Screen name="Assign" component={MainDashboard} />
     <Stack.Screen name="Available" component={MainDashboard} />
+    <Stack.Screen name="ProfileNavigator" component={ProfileNavigator} />
   </Stack.Navigator>
 );
 

@@ -37,8 +37,8 @@ const Register: React.FC = () => {
   const handleSubmit = async (values: any) => {
     setLoading(true);
     if (
-      !values?.VendorDetails?.verifiedPanName &&
-      !values?.VendorDetails?.verifiedPanName
+      values?.VendorDetails?.verifiedPanName === '' &&
+      values?.VendorDetails?.verifiedPanName === ''
     ) {
       Toast.show({ type: 'error', text1: 'Validate GST or PAN before Proced' });
       setLoading(false);
