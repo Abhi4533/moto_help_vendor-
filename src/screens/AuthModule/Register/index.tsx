@@ -12,6 +12,7 @@ import Step3Form from './components/Step3Form';
 
 import { register } from '@api/endpoints/auth.api';
 import { VendorRegistrationRequest } from '@api/types/auth.types';
+import Loader from '@components/common/Loader';
 import SafeContainer from '@components/layout/SafeContainer';
 import { COLORS } from '@config/theme';
 import { loginSuccess } from '@store/slices/authSlice';
@@ -25,6 +26,7 @@ import {
 } from './validationSchema';
 
 const Register: React.FC = () => {
+  const [loading, setLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -33,23 +35,35 @@ const Register: React.FC = () => {
   const [step, setStep] = useState(1);
 
   const handleSubmit = async (values: any) => {
+    setLoading(true);
+    if (
+      !values?.VendorDetails?.verifiedPanName &&
+      !values?.VendorDetails?.verifiedPanName
+    ) {
+      Toast.show({ type: 'error', text1: 'Validate GST or PAN before Proced' });
+      setLoading(false);
+      return;
+    }
     const payload = JSON.parse(JSON.stringify(values));
     delete payload.VendorDetails.verifiedCompanyName;
     delete payload.VendorDetails.verifiedPanName;
-
-    const res = await register({
-      ...values,
-      VendorDetails: {
-        ...values?.VendorDetails,
-        employee_count: String(values?.VendorDetails?.employee_count),
-      },
-    });
-
-    if (res?.status === '00') {
-      dispatch(loginSuccess({ token: res?.userDetails?.vendorid }));
-      navigation.replace('Dashboard');
-    } else {
-      Toast.show({ type: 'error', text1: res?.message });
+    try {
+      const res = await register({
+        ...values,
+        VendorDetails: {
+          ...values?.VendorDetails,
+          employee_count: String(values?.VendorDetails?.employee_count),
+        },
+      });
+      if (res?.status === '00') {
+        dispatch(loginSuccess({ token: res?.userDetails?.vendorid }));
+        navigation.replace('Dashboard');
+      } else {
+        Toast.show({ type: 'error', text1: res?.message });
+      }
+    } catch (error) {
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,6 +105,7 @@ const Register: React.FC = () => {
 
   return (
     <SafeContainer>
+      <Loader visible={loading} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.root}
@@ -135,7 +150,7 @@ const Register: React.FC = () => {
                   />
 
                   {step === 1 && <Step1Form />}
-                  {step === 2 && <Step2Form />}
+                  {step === 2 && <Step2Form onSkip={() => setStep(step + 1)} />}
                   {step === 3 && <Step3Form />}
 
                   <View style={styles.buttons}>

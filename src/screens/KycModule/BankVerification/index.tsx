@@ -26,12 +26,16 @@ import { getVendorDetails } from '@api/endpoints/profile.api';
 import { useValidateBankMutation } from '@api/hooks_api';
 import Input from '@components/common/Input';
 import Loader from '@components/common/Loader';
+import { useNavigation } from '@react-navigation/native';
 import { RootState } from '@store/index';
+import { setKycStatus } from '@store/slices/authSlice';
 import { Formik } from 'formik';
 import Toast from 'react-native-toast-message';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 const BankVerification = () => {
+  const dispatch = useDispatch();
+  const navigation = useNavigation<any>();
   const [conpanyInfo, setCompanyInfo] = useState({ companyName: '' });
   const [showConfirmAcc, setShowConfirmAcc] = useState(false);
   const vendorId = useSelector((state: RootState) => state?.auth?.token);
@@ -102,6 +106,7 @@ const BankVerification = () => {
 
   const handleFinalSubmit = async (values: BankDetailsType) => {
     try {
+      console.log({ conpanyInfo });
       if (!conpanyInfo?.companyName) return;
       if (values?.bank_ac_holder_name === conpanyInfo?.companyName) {
         const resp = await validateBank({
@@ -109,6 +114,8 @@ const BankVerification = () => {
           vendorid: vendorId,
         }).unwrap();
         if (resp?.status === '00') {
+          dispatch(setKycStatus('COMPLETED'));
+          navigation.replace('Dashboard');
         } else {
           Toast.show({ type: 'error', text1: resp?.message });
         }
@@ -125,7 +132,7 @@ const BankVerification = () => {
     try {
       const resp = await getVendorDetails({ vendorid: vendorId });
       if (resp?.status === '00') {
-        setCompanyInfo(resp?.data?.Vendor_Details);
+        setCompanyInfo(resp?.data?.Vendor_Details?.[0]);
       } else {
         Toast.show({ type: 'error', text1: resp?.message });
       }
@@ -134,7 +141,7 @@ const BankVerification = () => {
 
   useLayoutEffect(() => {
     getVenderDetails();
-  }, [getVenderDetails]);
+  }, []);
 
   return (
     <TemporaryDashboardLayout title="Bank Details">

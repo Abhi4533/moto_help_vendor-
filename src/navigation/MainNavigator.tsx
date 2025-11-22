@@ -1,4 +1,4 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import MainDashboard from '../screens/Dashboard/MainDashboard';
 // import MainDashboard from '../screens/Dashboard/MainDashboard';
@@ -7,25 +7,24 @@ import MainDashboard from '../screens/Dashboard/MainDashboard';
 // import TripAssign from '../screens/TripModule/TripAssign';
 // import VehicleList from '../screens/VehicleModule/VehicleList';
 
-export type MainTabParamList = {
+export type MainStackParamList = {
   Dashboard: undefined;
   Vehicles: undefined;
   Drivers: undefined;
-  Trips: undefined;
-  Tracking: undefined;
+  Assign: undefined;
+  Available: undefined;
 };
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createNativeStackNavigator<MainStackParamList>();
 
 const MainNavigator = () => (
-  <Tab.Navigator screenOptions={{ headerShown: false }}>
-    <Tab.Screen name="Dashboard" component={MainDashboard} />
-    {/* <Tab.Screen name="Dashboard" component={MainDashboard} />
-    <Tab.Screen name="Vehicles" component={VehicleList} />
-    <Tab.Screen name="Drivers" component={DriverList} />
-    <Tab.Screen name="Trips" component={TripAssign} />
-    <Tab.Screen name="Tracking" component={LiveTracking} /> */}
-  </Tab.Navigator>
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Dashboard" component={MainDashboard} />
+    <Stack.Screen name="Vehicles" component={MainDashboard} />
+    <Stack.Screen name="Drivers" component={MainDashboard} />
+    <Stack.Screen name="Assign" component={MainDashboard} />
+    <Stack.Screen name="Available" component={MainDashboard} />
+  </Stack.Navigator>
 );
 
 export default MainNavigator;

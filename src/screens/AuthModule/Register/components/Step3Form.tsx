@@ -170,10 +170,7 @@ const Step3Form: React.FC = () => {
             verifiedCompanyName,
             values.VendorDetails.companyName,
           );
-          setFieldError(
-            'VendorDetails.companyName',
-            'Company name should be same as given GST',
-          );
+          setFieldValue('VendorDetails.companyName', verifiedCompanyName);
           return;
         }
       }
@@ -204,20 +201,9 @@ const Step3Form: React.FC = () => {
           verifiedPanName,
           nameToValidateAgainst,
         );
-
         if (!isNameMatch) {
           showNameMismatchAlert('pan', verifiedPanName, nameToValidateAgainst);
-          if (isIndividual) {
-            setFieldError(
-              'VendorDetails.companyName',
-              'Name should be same as given PAN',
-            );
-          } else {
-            setFieldError(
-              'VendorDetails.owner_name',
-              'Name should be same as given PAN',
-            );
-          }
+          setFieldValue('VendorDetails.companyName', verifiedPanName);
           return;
         }
       }
@@ -235,45 +221,37 @@ const Step3Form: React.FC = () => {
 
         <View style={styles.documentsContainer}>
           {/* GST Field */}
-          {!isIndividual && (
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWithButton}>
-                <View style={{ flex: 1 }}>
-                  <Input
-                    mode="outlined"
-                    label="GST Number"
-                    placeholder="15-digit GST"
-                    value={values.kycDetails.gstNo}
-                    maxLength={15}
-                    onChangeText={handleGSTChange}
-                    style={styles.flexInput}
-                    activeOutlineColor={COLORS.primary}
-                    editable={!isIndividual}
-                    error={(errors?.kycDetails as any)?.gstNo}
-                  />
-                </View>
-                {isGSTVerifyButtonActive && (
-                  <Button
-                    mode="contained"
-                    style={styles.verifyButton}
-                    labelStyle={styles.buttonLabel}
-                    onPress={handleVerifyGstNumber}
-                    disabled={!isGSTVerifyButtonActive}
-                    loading={verfyGstLoading}
-                  >
-                    Verify
-                  </Button>
-                )}
+
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWithButton}>
+              <View style={{ flex: 1 }}>
+                <Input
+                  mode="outlined"
+                  label="GST Number"
+                  placeholder="15-digit GST"
+                  value={values.kycDetails.gstNo}
+                  maxLength={15}
+                  onChangeText={handleGSTChange}
+                  style={styles.flexInput}
+                  activeOutlineColor={COLORS.primary}
+                  editable={!isIndividual}
+                  error={(errors?.kycDetails as any)?.gstNo}
+                />
               </View>
-              {isGSTVerified && (
-                <View>
-                  <Text style={styles.successText}>
-                    ✅ {values?.VendorDetails?.verifiedCompanyName}
-                  </Text>
-                </View>
+              {isGSTVerifyButtonActive && (
+                <Button
+                  mode="contained"
+                  style={styles.verifyButton}
+                  labelStyle={styles.buttonLabel}
+                  onPress={handleVerifyGstNumber}
+                  disabled={!isGSTVerifyButtonActive}
+                  loading={verfyGstLoading}
+                >
+                  Verify
+                </Button>
               )}
             </View>
-          )}
+          </View>
 
           {/* PAN Field */}
           <View style={styles.inputContainer}>
@@ -312,17 +290,24 @@ const Step3Form: React.FC = () => {
                 </Button>
               )}
             </View>
-            {isPANVerified && (
-              <View>
-                <Text style={styles.successText}>
-                  ✅ {values?.VendorDetails?.verifiedPanName}
-                </Text>
-              </View>
-            )}
           </View>
         </View>
       </View>
 
+      {(isGSTVerified || isPANVerified) && (
+        <Input
+          mode="outlined"
+          label={
+            isPANVerified ? 'Owner Name As Per Pan' : 'Company Name As Per Gst'
+          }
+          placeholder="Enter count"
+          value={
+            isPANVerified
+              ? values?.VendorDetails?.verifiedPanName
+              : values?.VendorDetails?.verifiedCompanyName
+          }
+        />
+      )}
       {/* Vehicle Information Section */}
       <View style={styles.section}>
         <Input

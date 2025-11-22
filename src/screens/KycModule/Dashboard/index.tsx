@@ -1,5 +1,6 @@
 import { getDrivers } from '@api/endpoints/driver.api';
 import { getVehicles } from '@api/endpoints/vehicle.api';
+import { useNavigation } from '@react-navigation/native';
 import { RootState } from '@store/index';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -10,7 +11,7 @@ import { styles } from './style';
 
 const TemporaryDashboard = () => {
   const venderId = useSelector((state: RootState) => state?.auth?.token);
-
+  const navigation = useNavigation<any>();
   const [vehiclesCount, setVehicleCount] = useState(0);
   const [driversCount, setDriverCount] = useState(0);
 
@@ -22,7 +23,7 @@ const TemporaryDashboard = () => {
     { key: 'registration', label: 'Registration', completed: true },
     { key: 'vehicle', label: 'Vehicle', completed: vehicleDone },
     { key: 'driver', label: 'Driver', completed: driverDone },
-    { key: 'kyc', label: 'KYC', completed: false },
+    { key: 'kyc', label: 'Bank', completed: false },
   ];
   // API fetch
   const fetchData = useCallback(async () => {
@@ -117,13 +118,19 @@ const TemporaryDashboard = () => {
 
         {/* ---- MAIN ACTION BUTTONS ---- */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.box}>
+          <TouchableOpacity
+            style={styles.box}
+            onPress={() => navigation.navigate('ValidateVehicle')}
+          >
             <Icon source="car" size={38} />
             <Text style={styles.boxText}>Validate Vehicle</Text>
             <Text style={styles.subInfo}>{vehiclesCount} Added</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.box}>
+          <TouchableOpacity
+            style={styles.box}
+            onPress={() => navigation.navigate('DriverList')}
+          >
             <Icon source="account-plus" size={38} />
             <Text style={styles.boxText}>Add Driver</Text>
             <Text style={styles.subInfo}>{driversCount} Added</Text>
@@ -132,6 +139,7 @@ const TemporaryDashboard = () => {
           <TouchableOpacity
             style={[styles.box, !kycEnabled && styles.disabledBox]}
             disabled={!kycEnabled}
+            onPress={() => navigation.navigate('BankVerification')}
           >
             <Icon
               source="shield-account"
@@ -139,7 +147,7 @@ const TemporaryDashboard = () => {
               color={kycEnabled ? '#000' : '#999'}
             />
             <Text style={[styles.boxText, !kycEnabled && styles.disabledText]}>
-              Start KYC
+              Bank Details
             </Text>
             {!kycEnabled && <Text style={styles.lockText}>Locked</Text>}
           </TouchableOpacity>

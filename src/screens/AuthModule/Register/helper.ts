@@ -104,8 +104,8 @@ export const showNameMismatchAlert = (
   };
 
   const messages = {
-    gst: `GST registered company name "${verifiedName}" does not match entered company name "${enteredName}". Please verify your company name.`,
-    pan: `PAN registered name "${verifiedName}" does not match entered owner name "${enteredName}". Please verify your owner name.`,
+    gst: `GST registered company name "${verifiedName}" Relaced with company name.`,
+    pan: `PAN registered name "${verifiedName}" Replaced with owner name.`,
   };
 
   Alert.alert(titles[type], messages[type], [{ text: 'OK' }]);

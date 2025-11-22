@@ -32,4 +32,9 @@ export const styles = StyleSheet.create({
     marginTop: 24,
     gap: 12,
   },
+  // Add to your existing styles
+  skipButton: {
+    marginHorizontal: 8,
+    borderColor: '#666',
+  },
 });

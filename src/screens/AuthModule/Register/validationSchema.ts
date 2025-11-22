@@ -50,10 +50,9 @@ export const StepOneSchema = Yup.object({
 -------------------------------------------------- */
 export const StepTwoSchema = Yup.object({
   VendorDetails: Yup.object({
-    employee_count: Yup.number()
-      .required('Number of authorized persons is required')
-      .min(1, 'At least 1 authorized person required')
-      .max(10, 'Too many authorized persons'),
+    employee_count: Yup.number().required(
+      'Number of authorized persons is required',
+    ),
   }),
 
   VendorEmployeeDetails: Yup.array()
@@ -128,11 +127,12 @@ export const StepThreeSchema = Yup.object({
     ),
 
   kycDetails: Yup.object({
-    gstNo: Yup.string().when('VendorDetails.companyType', {
-      is: (type: string) => type !== 'INDIVIDUAL' && type !== 'CHALAK MALAK',
-      then: schema => schema.required('GST number is required'),
-      otherwise: schema => schema.notRequired(),
-    }),
+    // gstNo: Yup.string().when('VendorDetails.companyType', {
+    //   is: (type: string) =>
+    //     type !== 'OWENER/INDIVIDUAL' && type !== 'CHALAK MALAK',
+    //   then: schema => schema.required('GST number is required'),
+    //   otherwise: schema => schema.notRequired(),
+    // }),
 
     panNo: Yup.string()
       .required('PAN number is required')
@@ -140,14 +140,5 @@ export const StepThreeSchema = Yup.object({
         /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
         'Invalid PAN format (e.g. ABCDE1234F)',
       ),
-
-    aadharNo: Yup.string().when('VendorDetails.companyType', {
-      is: (type: string) => type === 'INDIVIDUAL' || type === 'CHALAK MALAK',
-      then: schema =>
-        schema
-          .required('Aadhaar number is required')
-          .matches(/^\d{12}$/, 'Enter valid 12-digit Aadhaar number'),
-      otherwise: schema => schema.notRequired(),
-    }),
   }),
 });

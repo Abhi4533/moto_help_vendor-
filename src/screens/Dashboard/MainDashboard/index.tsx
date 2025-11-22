@@ -3,34 +3,34 @@
 //   useGetVehicleActiveListMutation,
 //   useGetVehicleProcessListMutation,
 // } from '@api/hooks_api';
+import {
+  getActiveVehicles,
+  getAvailableVehicles,
+  getProcessVehicles,
+} from '@api/endpoints/vehicle.api';
 import { useIsFocused } from '@react-navigation/native';
+import { RootState } from '@store/index';
 import React, { useLayoutEffect, useState } from 'react';
-import { StatusBar, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../store';
+import DashboardLayout from '../Layout/Layout';
 
 const MainDashboard = () => {
   const isFocused = useIsFocused();
-  const { vendorid } = useSelector((state: RootState) => state.auth);
+  const vendorid = useSelector((state: RootState) => state.auth?.token);
   const [isLoading, setIsLoading] = useState(true);
-
-  // const [getAvilableDriver, { data: avilableData }] =
-  //   useGetAvilableDriverMutation();
-  // const [getActiveDriver, { data: activeData }] =
-  //   useGetVehicleActiveListMutation();
-  // const [getProcessDriver, { data: processData }] =
-  //   useGetVehicleProcessListMutation();
 
   useLayoutEffect(() => {
     const fetchData = async () => {
       if (vendorid && isFocused) {
         setIsLoading(true);
         try {
-          // await Promise.all([
-          //   getAvilableDriver({ vendorid }),
-          //   getActiveDriver({ vendorid }),
-          //   getProcessDriver({ vendorid }),
-          // ]);
+          const response = await Promise.all([
+            getAvailableVehicles({ vendorid }),
+            getActiveVehicles({ vendorid }),
+            getProcessVehicles({ vendorid }),
+          ]);
+          console.log({ response });
         } catch (error) {
           console.error('Error fetching dashboard data:', error);
         } finally {
@@ -42,36 +42,11 @@ const MainDashboard = () => {
     fetchData();
   }, [vendorid, isFocused]);
 
-  // const hasData = [activeData, processData, avilableData].some(
-  //   data => (data?.data?.length ?? 0) > 0,
-  // );
-
-  // if (isLoading) {
-  //   return (
-  //     <View style={[styles.container, styles.center]}>
-  //       <StatusBar backgroundColor="#6366F1" barStyle="light-content" />
-  //       <ActivityIndicator size="large" color="#6366F1" />
-  //     </View>
-  //   );
-  // }
-
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor="#6366F1" barStyle="light-content" />
-      {/* <FirstScreen /> */}
-    </View>
+    <DashboardLayout>
+      <Text>check</Text>
+    </DashboardLayout>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default MainDashboard;

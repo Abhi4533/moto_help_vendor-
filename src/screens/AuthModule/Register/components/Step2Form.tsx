@@ -12,16 +12,14 @@ import React, { useCallback, useMemo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, Card, IconButton, Text, TextInput } from 'react-native-paper';
 
-// Constants
 const MIN_AUTHORITIES = 1;
 const OTHER_DESIGNATION = 'Other';
 
-const Step2Form: React.FC = () => {
+const Step2Form: React.FC<any> = ({ onSkip }) => {
   const { values, setFieldValue, errors } =
     useFormikContext<VendorRegistrationRequest>();
   const { data: designationList, isLoading } = useGetDesignationListQuery();
-  console.log({ errors });
-  // MEMOIZED to prevent unnecessary re-renders
+
   const vendorEmployeeDetails: VendorEmployeeDetails[] = useMemo(
     () =>
       Array.isArray(values.VendorEmployeeDetails)
@@ -74,13 +72,28 @@ const Step2Form: React.FC = () => {
     [vendorEmployeeDetails, setFieldValue],
   );
 
-  // Check if "Other" is selected
   const isOtherDesignationSelected = (index: number) =>
     vendorEmployeeDetails[index]?.designation === OTHER_DESIGNATION;
 
   return (
     <View style={styles.container}>
+      {/* ⭐ ALWAYS FLOATING SKIP BUTTON */}
+      <View style={styles.floatingSkipContainer}>
+        <Button
+          mode="contained-tonal"
+          compact
+          onPress={() => {
+            onSkip();
+          }}
+          style={styles.floatingSkipBtn}
+          labelStyle={styles.floatingSkipLabel}
+        >
+          Skip
+        </Button>
+      </View>
+
       <Loader visible={isLoading} />
+
       <Card style={styles.summaryCard}>
         <Card.Content style={styles.summaryContent}>
           <View style={styles.headerSection}>
@@ -92,23 +105,20 @@ const Step2Form: React.FC = () => {
           </View>
 
           <View
-            style={[
-              styles.maxCountContainer,
-              {
-                flexDirection: 'row',
-                gap: 5,
-                alignItems: 'center',
-                justifyContent: 'center',
-              },
-            ]}
+            style={{
+              flexDirection: 'row',
+              gap: 5,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
+            }}
           >
-            {/* MAX AUTHORITIES FIELD – THIS WAS CAUSING KEYBOARD CLOSE */}
             <View style={{ flex: 1 }}>
               <Input
                 label="Maximum Authorities"
                 value={values?.VendorDetails?.employee_count}
                 mode="outlined"
-                style={[styles.maxCountInput]}
+                style={styles.maxCountInput}
                 keyboardType="number-pad"
                 maxLength={2}
                 left={<TextInput.Icon icon="account-group" />}
@@ -118,6 +128,7 @@ const Step2Form: React.FC = () => {
                 error={errors?.VendorDetails?.employee_count}
               />
             </View>
+
             <View
               style={[
                 styles.countBadge,
@@ -154,12 +165,12 @@ const Step2Form: React.FC = () => {
               </Card.Content>
             </Card>
           )}
+
           {errors?.VendorEmployeeDetails &&
             typeof errors?.VendorEmployeeDetails === 'string' && (
               <Card style={styles.maxLimitCard}>
                 <Card.Content style={styles.maxLimitContent}>
                   <IconButton icon="close" iconColor="#ff9800" size={18} />
-
                   <Text variant="bodySmall" style={styles.maxLimitText}>
                     {errors?.VendorEmployeeDetails}
                   </Text>
@@ -168,18 +179,17 @@ const Step2Form: React.FC = () => {
             )}
         </Card.Content>
       </Card>
+
       <FlatList
-        keyboardShouldPersistTaps="always" // *** FIX ADDED ***
+        keyboardShouldPersistTaps="always"
         data={vendorEmployeeDetails}
         renderItem={({ item, index }) => (
           <Card style={styles.contactCard}>
             <Card.Content>
               <View style={styles.cardHeader}>
-                <View style={styles.contactNumber}>
-                  <Text variant="titleSmall" style={styles.contactNumberText}>
-                    Authority #{index + 1}
-                  </Text>
-                </View>
+                <Text variant="titleSmall" style={styles.contactNumberText}>
+                  Authority #{index + 1}
+                </Text>
 
                 {index >= MIN_AUTHORITIES && (
                   <IconButton
@@ -192,70 +202,65 @@ const Step2Form: React.FC = () => {
                 )}
               </View>
 
-              {/* Designation Field */}
-              <View style={styles.selectListContainer}>
-                {values?.VendorDetails?.companyType === 'CHALAK MALAK' ? (
-                  <Input
+              {values?.VendorDetails?.companyType === 'CHALAK MALAK' ? (
+                <Input
+                  label="Designation *"
+                  value={item.designation}
+                  mode="outlined"
+                  style={styles.input}
+                  editable={false}
+                />
+              ) : (
+                <>
+                  <Dropdown
                     label="Designation *"
-                    value={item.designation}
-                    mode="outlined"
-                    style={styles.input}
-                    editable={false}
+                    data={
+                      designationList?.data
+                        ? [
+                            ...designationList.data,
+                            { label: 'Other', value: 'Other' },
+                          ]
+                        : [{ label: 'Other', value: 'Other' }]
+                    }
+                    value={item?.designation}
+                    onChange={text =>
+                      setFieldValue(
+                        `VendorEmployeeDetails[${index}].designation`,
+                        text,
+                      )
+                    }
+                    error={
+                      !!(errors?.VendorEmployeeDetails?.[index] as any)
+                        ?.designation
+                    }
+                    errorMessage={
+                      (errors?.VendorEmployeeDetails?.[index] as any)
+                        ?.designation
+                    }
                   />
-                ) : (
-                  <>
-                    <Dropdown
-                      label="Designation *"
-                      data={
-                        designationList?.data
-                          ? [
-                              ...designationList.data,
-                              { label: 'Other', value: 'Other' },
-                            ]
-                          : [{ label: 'Other', value: 'Other' }]
-                      }
-                      value={item?.designation}
-                      onChange={text =>
+
+                  {isOtherDesignationSelected(index) && (
+                    <Input
+                      label="Enter Designation *"
+                      value={item.customDesignation || ''}
+                      mode="outlined"
+                      style={[styles.input, styles.otherInput]}
+                      left={<TextInput.Icon icon="pencil" />}
+                      onChangeText={text =>
                         setFieldValue(
-                          `VendorEmployeeDetails[${index}].designation`,
+                          `VendorEmployeeDetails[${index}].customDesignation`,
                           text,
                         )
                       }
                       error={
-                        !!(errors?.VendorEmployeeDetails?.[index] as any)
-                          ?.designation
-                      }
-                      errorMessage={
                         (errors?.VendorEmployeeDetails?.[index] as any)
-                          ?.designation
+                          ?.customDesignation
                       }
                     />
+                  )}
+                </>
+              )}
 
-                    {isOtherDesignationSelected(index) && (
-                      <Input
-                        label="Enter Designation *"
-                        value={item.customDesignation || ''}
-                        mode="outlined"
-                        style={[styles.input, styles.otherInput]}
-                        left={<TextInput.Icon icon="pencil" />}
-                        placeholder="Specify your designation"
-                        onChangeText={text =>
-                          setFieldValue(
-                            `VendorEmployeeDetails[${index}].customDesignation`,
-                            text,
-                          )
-                        }
-                        error={
-                          (errors?.VendorEmployeeDetails?.[index] as any)
-                            ?.customDesignation
-                        }
-                      />
-                    )}
-                  </>
-                )}
-              </View>
-
-              {/* Full Name */}
               <Input
                 label="Full Name *"
                 value={item.full_name}
@@ -273,7 +278,6 @@ const Step2Form: React.FC = () => {
                 }
               />
 
-              {/* Mobile Number */}
               <Input
                 label="Mobile Number *"
                 value={item.contact_No}
@@ -293,7 +297,6 @@ const Step2Form: React.FC = () => {
                 }
               />
 
-              {/* Email */}
               <Input
                 label="Email Address"
                 value={item.emailAddress}
@@ -325,36 +328,69 @@ const Step2Form: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingBottom: 10 },
+
+  // ⭐ INDUSTRY STANDARD FLOATING SKIP
+  floatingSkipContainer: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 99999,
+    elevation: 10,
+  },
+  floatingSkipBtn: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+  },
+  floatingSkipLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
   summaryCard: { marginBottom: 16 },
   summaryContent: { paddingVertical: 12 },
+
   headerSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
   },
-  headerText: { flex: 1 },
-  mainTitle: { fontWeight: '600', color: '#2c3e50', marginBottom: 2 },
-  subtitle: { color: '#7f8c8d', fontSize: 12 },
 
-  // 🟢 ADD THIS (FIX)
-  removeButton: {
-    margin: 0,
-    padding: 0,
+  headerText: { flex: 1 },
+
+  mainTitle: {
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 4,
   },
+
+  maxCountInput: { backgroundColor: '#fff' },
 
   countBadge: {
     backgroundColor: '#3498db',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    alignItems: 'center',
   },
   countBadgeFull: { backgroundColor: '#ff6b6b' },
+
   countText: { color: '#fff', fontWeight: '600', fontSize: 12 },
-  maxCountContainer: { marginBottom: 12 },
-  maxCountInput: { backgroundColor: '#ffffff', marginBottom: 4 },
+
+  addButton: {
+    marginTop: 8,
+    marginBottom: 8,
+    borderColor: '#3498db',
+  },
+
+  buttonContent: { paddingVertical: 6 },
+
+  maxLimitCard: {
+    marginTop: 8,
+    marginBottom: 8,
+    backgroundColor: '#fff3e0',
+    borderWidth: 1,
+    borderColor: '#ff9800',
+  },
+  maxLimitContent: { flexDirection: 'row', alignItems: 'center' },
+  maxLimitText: { color: '#e65100', marginLeft: 4, fontSize: 12 },
 
   contactCard: { marginBottom: 12 },
   cardHeader: {
@@ -363,89 +399,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  input: { marginBottom: 6, backgroundColor: '#ffffff' },
+  input: { marginBottom: 6, backgroundColor: '#fff' },
   otherInput: { marginTop: 6 },
-  selectListContainer: { marginBottom: 6 },
 
-  addButton: { marginTop: 8, marginBottom: 8, borderColor: '#3498db' },
-  buttonContent: { paddingVertical: 6 },
-
-  maxLimitCard: {
-    marginTop: 8,
-    marginBottom: 8,
-    backgroundColor: '#fff3e0',
-    borderColor: '#ff9800',
-    borderWidth: 1,
-  },
-  maxLimitContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-
-  maxLimitText: { color: '#e65100', marginLeft: 4, flex: 1, fontSize: 12 },
-
-  duplicateAlert: {
-    color: '#ff9800',
-    fontWeight: '500',
-  },
-
-  countBadgeWarning: {
-    backgroundColor: '#ff9800',
-  },
-
-  maxCountHelpText: {
-    color: '#7f8c8d',
-    fontSize: 11,
-    marginLeft: 4,
-    fontStyle: 'italic',
-  },
-  progressContainer: {
-    marginTop: 4,
-  },
-  progressBackground: {
-    height: 6,
-    backgroundColor: '#ecf0f1',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  duplicateHint: {
-    color: '#ff9800',
-    fontSize: 11,
-    marginTop: 4,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-
-  contactNumber: {
-    flex: 1,
-  },
   contactNumberText: {
     fontWeight: '600',
-    color: '#2c3e50',
     fontSize: 14,
-  },
-  duplicateWarning: {
-    color: '#ff9800',
-    fontSize: 12,
-    fontWeight: '500',
+    color: '#2c3e50',
   },
 
-  errorText: {
-    color: '#d32f2f',
-    fontSize: 11,
-    marginBottom: 6,
-    marginLeft: 4,
-    marginTop: -2,
-  },
-
-  bottomSpacer: {
-    height: 10,
-  },
+  removeButton: { padding: 0, margin: 0 },
 });
 
 export default Step2Form;
