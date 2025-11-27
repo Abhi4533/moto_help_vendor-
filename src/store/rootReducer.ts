@@ -5,6 +5,7 @@ import appReducer from './slices/appSlice';
 import authReducer from './slices/authSlice';
 import driverReducer from './slices/driverSlice';
 import kycReducer from './slices/kycSlice';
+import mapReducer from './slices/mapSlice';
 import tripReducer from './slices/tripSlice';
 import validatedVehiclesReducer from './slices/validatedVehiclesSlice';
 import vehicleReducer from './slices/vehicleSlice';
@@ -14,7 +15,8 @@ const rootReducer = combineReducers({
   driver: driverReducer,
   trip: tripReducer,
   app: appReducer,
-  kyc: kycReducer, // 👈 ADD THIS
+  kyc: kycReducer,
+  map: mapReducer,
   validatedVehicles: validatedVehiclesReducer,
   [api.reducerPath]: api.reducer,
 });

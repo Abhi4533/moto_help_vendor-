@@ -78,19 +78,7 @@ const Step2Form: React.FC<any> = ({ onSkip }) => {
   return (
     <View style={styles.container}>
       {/* ⭐ ALWAYS FLOATING SKIP BUTTON */}
-      <View style={styles.floatingSkipContainer}>
-        <Button
-          mode="contained-tonal"
-          compact
-          onPress={() => {
-            onSkip();
-          }}
-          style={styles.floatingSkipBtn}
-          labelStyle={styles.floatingSkipLabel}
-        >
-          Skip
-        </Button>
-      </View>
+      <View style={styles.floatingSkipContainer}></View>
 
       <Loader visible={isLoading} />
 
@@ -132,6 +120,7 @@ const Step2Form: React.FC<any> = ({ onSkip }) => {
             <View
               style={[
                 styles.countBadge,
+
                 currentTotalCount ===
                   Number(values?.VendorDetails?.employee_count) &&
                   styles.countBadgeFull,
@@ -142,6 +131,17 @@ const Step2Form: React.FC<any> = ({ onSkip }) => {
                 {Number(values?.VendorDetails?.employee_count) + 1}
               </Text>
             </View>
+            <Button
+              mode="contained-tonal"
+              compact
+              onPress={() => {
+                onSkip();
+              }}
+              style={styles.floatingSkipBtn}
+              labelStyle={styles.floatingSkipLabel}
+            >
+              Skip
+            </Button>
           </View>
 
           {canAddMore ? (
@@ -362,17 +362,25 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
-  maxCountInput: { backgroundColor: '#fff' },
+  maxCountInput: { backgroundColor: '#fff', flex: 1 },
 
   countBadge: {
     backgroundColor: '#3498db',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   countBadgeFull: { backgroundColor: '#ff6b6b' },
 
-  countText: { color: '#fff', fontWeight: '600', fontSize: 12 },
+  countText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
+    paddingVertical: 8,
+    width: 100,
+  },
 
   addButton: {
     marginTop: 8,

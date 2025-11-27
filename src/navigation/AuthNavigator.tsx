@@ -13,7 +13,9 @@ export type AuthStackParamList = {
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 const AuthNavigator = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
+  <Stack.Navigator
+    screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
+  >
     <Stack.Screen name="Login" component={MobileNumberScreen} />
     <Stack.Screen name="OTPVerify" component={OTPVerify} />
     <Stack.Screen name="Register" component={Register} />

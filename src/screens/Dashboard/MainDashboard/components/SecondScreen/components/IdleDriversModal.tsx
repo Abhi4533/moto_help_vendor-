@@ -1,5 +1,4 @@
-import { VehicleAvailabilityDriver } from '@api/api.type';
-import { initializeTrip } from '@store/slice/mapTabSlice';
+import { setDriverAndCustomerLocations } from '@store/slices/mapSlice';
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -23,7 +22,7 @@ import { useDispatch } from 'react-redux';
 interface IdleDriversModalProps {
   visible: boolean;
   onDismiss: () => void;
-  rawData: VehicleAvailabilityDriver[];
+  rawData: any[];
   // onDriverSelect: (driver: RawDriverData) => void;
   // selectedDriver: RawDriverData | null;
 }
@@ -55,25 +54,9 @@ const IdleDriversModal: React.FC<IdleDriversModalProps> = ({
     return rawData.map(driver => {
       const loads = driver.loads || [];
 
-      // Calculate total distance safely
-      const totalDistance = loads.reduce((sum, load) => {
-        return sum + (load.OriginToDestinationKm || 0);
-      }, 0);
-
-      // Calculate available loads safely
-      const availableLoads = loads.filter(
-        load => load.pickup_Latitude !== 0 && load.pickup_Longitude !== 0,
-      ).length;
-
-      const averageDistance =
-        loads.length > 0 ? totalDistance / loads.length : 0;
-
       return {
         ...driver,
         totalLoads: loads.length,
-        availableLoads,
-        totalDistance,
-        averageDistance,
       };
     });
   }, [rawData]);
@@ -89,39 +72,34 @@ const IdleDriversModal: React.FC<IdleDriversModalProps> = ({
     );
   });
 
-  const handleDriverPress = (driver: VehicleAvailabilityDriver) => {
+  const handleDriverPress = (driver: any) => {
+    console.log({ driver });
     const loadsData: any = (driver.loads || [])
-      .filter(load => load.pickup_Latitude !== 0 && load.pickup_Longitude !== 0)
-      .map(load => ({
-        coordinate: {
-          latitude: load.pickup_Latitude || 0,
-          longitude: load.pickup_Longitude || 0,
-        },
-        id: load.LoadPostID || '',
-        address: '',
-        status: 'available',
+      .filter(
+        (load: any) =>
+          load.pickup_Latitude !== 0 && load.pickup_Longitude !== 0,
+      )
+      .map((load: any) => ({
+        latitude: load.pickup_Latitude || 0,
+        longitude: load.pickup_Longitude || 0,
       }));
 
     dispatch(
-      initializeTrip({
-        driverCoordinate: {
+      setDriverAndCustomerLocations({
+        driver: {
           latitude: driver?.Driver_Latitude || 0,
           longitude: driver?.Driver_Longitude || 0,
         },
-        destination: null,
-        origin: null,
-        parcels: loadsData || [],
-        tripId: driver?.driver_id,
+        customers: loadsData.map((load: any) => load.coordinate),
       }),
     );
-
     onDismiss();
   };
 
   const renderDriverItem = ({
     item,
   }: {
-    item: VehicleAvailabilityDriver & {
+    item: any & {
       totalLoads: number;
       availableLoads: number;
       totalDistance: number;
@@ -130,11 +108,7 @@ const IdleDriversModal: React.FC<IdleDriversModalProps> = ({
   }) => (
     <TouchableOpacity
       onPress={() => handleDriverPress(item)}
-      style={[
-        styles.driverItem,
-        // selectedDriver?.driver_id === item.driver_id &&
-        //   styles.selectedDriverItem,
-      ]}
+      style={[styles.driverItem]}
     >
       <Card style={styles.driverCard}>
         <Card.Content>
@@ -206,7 +180,9 @@ const IdleDriversModal: React.FC<IdleDriversModalProps> = ({
           <Appbar.BackAction onPress={onDismiss} />
           <Appbar.Content
             title="Available Drivers"
-            subtitle={`${filteredData.length} driver${filteredData.length !== 1 ? 's' : ''} available`}
+            subtitle={`${filteredData.length} driver${
+              filteredData.length !== 1 ? 's' : ''
+            } available`}
           />
           <Badge
             size={24}

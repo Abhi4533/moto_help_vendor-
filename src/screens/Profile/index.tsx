@@ -20,7 +20,7 @@ const ProfileNavigator = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        animation: 'fade',
       }}
     >
       <Stack.Screen name="ProfileCompanyInfo" component={ProfileCompanyInfo} />

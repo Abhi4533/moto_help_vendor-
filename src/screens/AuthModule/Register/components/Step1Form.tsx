@@ -5,18 +5,19 @@ import {
 } from '@api/hooks_api';
 import { VendorRegistrationRequest } from '@api/types/auth.types';
 import Dropdown from '@components/common/Dropdown';
-import Input from '@components/common/Input';
+import FormikDropdown from '@components/common/FormikDropdown';
+import FormikInput from '@components/common/FormikInput';
 import Loader from '@components/common/Loader';
 import { useFormikContext } from 'formik';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { TextInput } from 'react-native-paper';
-import { companyTypedata, initialValues } from '../helper';
+import { companyTypedata } from '../helper';
 
 const Step1Form: React.FC = () => {
   const [getAddressByPincode] = useGetAddressByPinMutation();
   const { data: stateData, isLoading: stateLoading } = useGetStateQuery();
-  const { values, setFieldValue, errors } =
+  const { values, setFieldValue, errors, touched } =
     useFormikContext<VendorRegistrationRequest>();
 
   const { data: districtData, isLoading: districtLoading } =
@@ -41,12 +42,12 @@ const Step1Form: React.FC = () => {
             addressData?.State?.toLocaleUpperCase() || '',
           );
           setFieldValue(
-            'VendorDetails.destination',
+            'VendorDetails.district',
             addressData?.District?.toLocaleUpperCase(),
           );
         } else {
           setFieldValue('VendorDetails.state', '');
-          setFieldValue('VendorDetails.destination', '');
+          setFieldValue('VendorDetails.district', '');
         }
       }
     } catch (error) {}
@@ -59,23 +60,7 @@ const Step1Form: React.FC = () => {
     setFieldValue('kycDetails.gstNo', '');
     setFieldValue('kycDetails.cinNo', '');
     setFieldValue('kycDetails.aadharNo', '');
-    setFieldValue('VendorEmployeeDetails', [
-      {
-        ...initialValues.VendorEmployeeDetails[0],
-        designation: val === 'CHALAK MALAK' ? 'Authority' : '',
-      },
-    ]);
-  };
-
-  // Select State
-  const handleStateSelect = (val: string | string[]) => {
-    setFieldValue('VendorDetails.state', val);
-    setFieldValue('VendorDetails.destination', '');
-  };
-
-  // Select district
-  const handleDistrictSelect = (val: string | string[]) => {
-    setFieldValue('VendorDetails.destination', val);
+    setFieldValue('VendorEmployeeDetails', []);
   };
 
   return (
@@ -89,40 +74,32 @@ const Step1Form: React.FC = () => {
             data={companyTypedata}
             value={values?.VendorDetails?.companyType}
             onChange={handleCompanyTypeSelect}
-            error={!!errors?.VendorDetails?.companyType}
+            error={
+              touched?.VendorDetails?.companyType &&
+              !!errors?.VendorDetails?.companyType
+            }
             errorMessage={errors?.VendorDetails?.companyType}
           />
         </View>
 
         {/* Company Name / Individual Name */}
-        <Input
+        <FormikInput
+          name="VendorDetails.companyName"
           label={
             isChalakmalakOrIndividual
               ? 'Full Name (Name As per Aadhaar) *'
               : 'Company Name *'
           }
-          value={values.VendorDetails.companyName}
           mode="outlined"
-          style={styles.textInput}
-          onChangeText={(text: string) =>
-            setFieldValue('VendorDetails.companyName', text.toUpperCase())
-          }
           left={<TextInput.Icon icon="office-building" size={18} />}
-          error={errors?.VendorDetails?.companyName}
         />
-
         {/* Owner Name for Business Entities */}
         {!isChalakmalakOrIndividual && (
-          <Input
+          <FormikInput
+            name="VendorDetails.owner_name"
             label="Owner Name (Name As per Aadhaar) *"
-            value={values.VendorDetails.owner_name}
             mode="outlined"
-            style={styles.textInput}
-            onChangeText={(text: string) =>
-              setFieldValue('VendorDetails.owner_name', text.toUpperCase())
-            }
             left={<TextInput.Icon icon="account" size={18} />}
-            error={errors?.VendorDetails?.owner_name}
           />
         )}
 
@@ -143,49 +120,35 @@ const Step1Form: React.FC = () => {
 
         {/* Address Section */}
 
-        <Input
+        <FormikInput
+          name="VendorDetails.address1"
           label="Building, Apartment, Plot Number *"
-          value={values.VendorDetails.address1}
           mode="outlined"
-          style={styles.textInput}
-          onChangeText={(text: string) =>
-            setFieldValue('VendorDetails.address1', text.toUpperCase())
-          }
           left={<TextInput.Icon icon="home" size={18} />}
-          error={errors?.VendorDetails?.address1}
         />
-
-        <Input
+        <FormikInput
+          name="VendorDetails.address2"
           label="Area, Street, Sector, Village"
-          value={values.VendorDetails.address2}
           mode="outlined"
-          style={styles.textInput}
-          onChangeText={(text: string) =>
-            setFieldValue('VendorDetails.address2', text.toUpperCase())
-          }
           left={<TextInput.Icon icon="road" size={18} />}
-          error={errors?.VendorDetails?.address2}
         />
 
         {/* Location Details in Compact Row */}
-        <Input
+        <FormikInput
+          name="VendorDetails.pincode"
           label="Pincode *"
           placeholder="000000"
           value={values.VendorDetails.pincode}
           mode="outlined"
-          style={[styles.textInput, styles.compactInput]}
           keyboardType="number-pad"
           maxLength={6}
           onChangeText={handlePincodeChange}
-          error={errors?.VendorDetails?.pincode}
         />
-        <Dropdown
+
+        <FormikDropdown
+          name="VendorDetails.state"
           label="State *"
           data={stateData?.data || []}
-          value={values?.VendorDetails?.state}
-          onChange={handleStateSelect}
-          error={!!errors?.VendorDetails?.state}
-          errorMessage={errors?.VendorDetails?.state}
         />
         {/* State and District Selection */}
 
@@ -193,28 +156,20 @@ const Step1Form: React.FC = () => {
           style={[styles.selectContainer, { flex: 1 }]}
           pointerEvents={values?.VendorDetails?.state ? 'auto' : 'none'}
         >
-          <Dropdown
+          <FormikDropdown
+            name="VendorDetails.district"
             label="District *"
             data={districtData?.data || []}
-            value={values?.VendorDetails?.destination}
-            onChange={handleDistrictSelect}
-            error={!!errors?.VendorDetails?.destination}
-            errorMessage={errors?.VendorDetails?.destination}
           />
         </View>
 
-        <Input
+        <FormikInput
+          name="VendorDetails.Tahsil"
           label="Town/Tahsil *"
-          value={values.VendorDetails.Tahsil}
           mode="outlined"
-          style={[styles.textInput, styles.compactInput]}
-          onChangeText={text =>
-            setFieldValue('VendorDetails.Tahsil', text.toUpperCase())
-          }
-          error={errors?.VendorDetails?.Tahsil}
+          left={<TextInput.Icon icon="map-marker" size={18} />}
           editable={
-            !!values?.VendorDetails?.state &&
-            !!values?.VendorDetails?.destination
+            !!values?.VendorDetails?.state && !!values?.VendorDetails?.district
           }
         />
       </View>

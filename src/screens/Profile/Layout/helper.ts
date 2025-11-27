@@ -11,25 +11,25 @@ export const getInitials = (name: string) => {
 
 export const tabs = [
   {
-    key: 'company-info',
+    key: 'ProfileCompanyInfo',
     title: 'Company Info',
     icon: 'office-building' as const,
     count: 0,
   },
   {
-    key: 'employees',
+    key: 'ProfileEmployee',
     title: 'Employees',
     icon: 'account-group' as const,
     count: 4,
   },
   {
-    key: 'vehicles',
+    key: 'ProfileVehicles',
     title: 'Vehicles',
     icon: 'truck' as const,
     count: 2,
   },
   {
-    key: 'documents',
+    key: 'ProfileDocuments',
     title: 'Documents',
     icon: 'file-document' as const,
     count: 1,

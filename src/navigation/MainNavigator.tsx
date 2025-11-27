@@ -1,4 +1,8 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import VehicleAssignment from '@screens/Dashboard/AssignVehicle';
+import AvailabileVehicle from '@screens/Dashboard/AvailabileVehicle';
+import DriverList from '@screens/Dashboard/DriverList';
+import ValidateVehicle from '@screens/Dashboard/ValidateVehicle';
 import ProfileNavigator from '@screens/Profile';
 import React from 'react';
 import MainDashboard from '../screens/Dashboard/MainDashboard';
@@ -20,12 +24,15 @@ export type MainStackParamList = {
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
 const MainNavigator = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
+  <Stack.Navigator
+    initialRouteName="Dashboard"
+    screenOptions={{ headerShown: false }}
+  >
     <Stack.Screen name="Dashboard" component={MainDashboard} />
-    <Stack.Screen name="Vehicles" component={MainDashboard} />
-    <Stack.Screen name="Drivers" component={MainDashboard} />
-    <Stack.Screen name="Assign" component={MainDashboard} />
-    <Stack.Screen name="Available" component={MainDashboard} />
+    <Stack.Screen name="Vehicles" component={ValidateVehicle} />
+    <Stack.Screen name="Drivers" component={DriverList} />
+    <Stack.Screen name="Assign" component={VehicleAssignment} />
+    <Stack.Screen name="Available" component={AvailabileVehicle} />
     <Stack.Screen name="ProfileNavigator" component={ProfileNavigator} />
   </Stack.Navigator>
 );

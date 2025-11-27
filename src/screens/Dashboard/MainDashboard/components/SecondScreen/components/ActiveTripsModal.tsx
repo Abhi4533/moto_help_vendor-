@@ -1,5 +1,4 @@
-import { ActiveDriverData } from '@api/api.type';
-import { initializeTrip } from '@store/slice/mapTabSlice';
+import { setDriverPickupAndDestinationLocations } from '@store/slices/mapSlice';
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -23,7 +22,7 @@ import { useDispatch } from 'react-redux';
 interface ActiveTripsModalProps {
   visible: boolean;
   onDismiss: () => void;
-  rawData: ActiveDriverData[];
+  rawData: any[];
 }
 
 const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
@@ -56,11 +55,10 @@ const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
     return data;
   }, [rawData, searchQuery]);
 
-  const handleDriverPress = (driver: ActiveDriverData) => {
-    console.log('Selected driver:', driver);
+  const handleDriverPress = (driver: any) => {
     dispatch(
-      initializeTrip({
-        driverCoordinate: {
+      setDriverPickupAndDestinationLocations({
+        driver: {
           latitude: driver?.Driver_Latitude,
           longitude: driver?.dropoff_Longitude,
         },
@@ -68,26 +66,19 @@ const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
           latitude: driver?.dropoff_Latitude,
           longitude: driver?.dropoff_Longitude,
         },
-        origin: {
+        pickup: {
           latitude: driver?.pickup_Latitude,
           longitude: driver?.pickup_Longitude,
         },
-        parcels: [],
-        tripId: driver?.LoadPostID,
       }),
     );
-
     onDismiss();
   };
 
-  const renderDriverItem = ({ item }: { item: ActiveDriverData }) => (
+  const renderDriverItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       onPress={() => handleDriverPress(item)}
-      style={[
-        styles.driverItem,
-        // selectedDriver?.driver_id === item.driver_id &&
-        //   styles.selectedDriverItem,
-      ]}
+      style={[styles.driverItem]}
     >
       <Card style={styles.driverCard}>
         <Card.Content>
@@ -105,8 +96,8 @@ const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
                     item.Trip_Status === 'Active'
                       ? styles.activeChip
                       : item.Trip_Status === 'Progress'
-                        ? styles.progressChip
-                        : styles.completedChip,
+                      ? styles.progressChip
+                      : styles.completedChip,
                   ]}
                 >
                   {item.Trip_Status?.toUpperCase() || 'ACTIVE'}
@@ -259,7 +250,9 @@ const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
           <Appbar.BackAction onPress={onDismiss} />
           <Appbar.Content
             title="Active Trips"
-            subtitle={`${filteredData.length} active trip${filteredData.length !== 1 ? 's' : ''}`}
+            subtitle={`${filteredData.length} active trip${
+              filteredData.length !== 1 ? 's' : ''
+            }`}
           />
           <Badge
             size={24}

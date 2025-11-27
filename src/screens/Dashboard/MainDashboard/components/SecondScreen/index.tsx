@@ -1,51 +1,49 @@
+import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
 import {
-  ActiveDriverData,
-  ProcessDriverData,
-  VehicleAvailabilityDriver,
-} from '@api/api.type';
-import { initializeTrip, resetMapTab } from '@store/slice/mapTabSlice';
-import React, { FC, useState } from 'react';
+  clearMapData,
+  setDriverAndCustomerLocations,
+  setDriverAndPickupLocations,
+  setDriverPickupAndDestinationLocations,
+} from '@store/slices/mapSlice';
+import React, { FC } from 'react';
 import { useDispatch } from 'react-redux';
 import ActiveTripsModal from './components/ActiveTripsModal';
 import CompleteTripsModal from './components/CompleteTripsModal';
-import Header from './components/Header';
 import IdleDriversModal from './components/IdleDriversModal';
 import MapTab from './components/MapTab';
 import ProcessDriversModal from './components/ProcessDriversModal';
 import TabSelector from './components/TabSelector';
-import { TAB_CONFIG } from './helper';
 
-interface SecondScreenProps {
-  activeData: ActiveDriverData[];
-  avilableData: VehicleAvailabilityDriver[];
-  processData: ProcessDriverData[];
-  completeData?: any[];
-}
-
-const SecondScreen: FC<SecondScreenProps> = ({
+const SecondScreen: FC<any> = ({
   activeData,
   avilableData,
   processData,
   completeData = [],
 }) => {
   const dispatch = useDispatch();
-  const [idleModalVisible, setIdleModalVisible] = useState(false);
-  const [processModalVisible, setProcessModalVisible] = useState(false);
-  const [activeModalVisible, setActiveModalVisible] = useState(false);
-  const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const {
+    activeModalVisible,
+    setActiveModalVisible,
+    idleModalVisible,
+    setIdleModalVisible,
+    setCompleteModalVisible,
+    setProcessModalVisible,
+    completeModalVisible,
+    processModalVisible,
+    selectedTab,
+    setSelectedTab,
+  } = useDashboard();
+  const handleTabChange = (value: any) => {
+    setSelectedTab(value);
 
-  const [selectedTab, setSelectedTab] =
-    useState<keyof typeof TAB_CONFIG>('idle');
-
-  const handleTabChange = (value: string) => {
-    setSelectedTab(value as keyof typeof TAB_CONFIG);
-    dispatch(resetMapTab());
-    if (value === 'idle' && avilableData?.[0]?.Driver_Latitude) {
+    dispatch(clearMapData());
+    if (value === 'idle') {
       const loadsData: any = (avilableData?.[0]?.loads || [])
         .filter(
-          load => load.pickup_Latitude !== 0 && load.pickup_Longitude !== 0,
+          (load: any) =>
+            load.pickup_Latitude !== 0 && load.pickup_Longitude !== 0,
         )
-        .map(load => ({
+        .map((load: any) => ({
           coordinate: {
             latitude: load.pickup_Latitude || 0,
             longitude: load.pickup_Longitude || 0,
@@ -54,38 +52,33 @@ const SecondScreen: FC<SecondScreenProps> = ({
           address: '',
           status: 'available',
         }));
+
       dispatch(
-        initializeTrip({
-          driverCoordinate: {
+        setDriverAndCustomerLocations({
+          driver: {
             latitude: avilableData?.[0]?.Driver_Latitude || 0,
             longitude: avilableData?.[0]?.Driver_Longitude || 0,
           },
-          destination: null,
-          origin: null,
-          parcels: loadsData || [],
-          tripId: avilableData?.[0]?.driver_id,
+          customers: loadsData.map((load: any) => load.coordinate),
         }),
       );
-    } else if (value === 'process' && processData?.[0]?.Driver_Latitude) {
+    } else if (value === 'process') {
       dispatch(
-        initializeTrip({
-          driverCoordinate: {
+        setDriverAndPickupLocations({
+          driver: {
             latitude: processData?.[0]?.Driver_Latitude,
             longitude: processData?.[0]?.Driver_Longitude,
           },
-          destination: null,
-          origin: {
+          pickup: {
             latitude: processData?.[0]?.pickup_Latitude,
             longitude: processData?.[0]?.pickup_Longitude,
           },
-          parcels: [],
-          tripId: processData?.[0]?.driver_id,
         }),
       );
-    } else if (value === 'active' && activeData?.[0]?.pickup_Latitude) {
+    } else if (value === 'active') {
       dispatch(
-        initializeTrip({
-          driverCoordinate: {
+        setDriverPickupAndDestinationLocations({
+          driver: {
             latitude: activeData?.[0]?.Driver_Latitude,
             longitude: activeData?.[0]?.dropoff_Longitude,
           },
@@ -93,45 +86,22 @@ const SecondScreen: FC<SecondScreenProps> = ({
             latitude: activeData?.[0]?.dropoff_Latitude,
             longitude: activeData?.[0]?.dropoff_Longitude,
           },
-          origin: {
+          pickup: {
             latitude: activeData?.[0]?.pickup_Latitude,
             longitude: activeData?.[0]?.pickup_Longitude,
           },
-          parcels: [],
-          tripId: activeData?.[0]?.LoadPostID,
         }),
       );
     }
   };
-
-  const handleHeaderButtonPress = () => {
-    switch (selectedTab) {
-      case 'idle':
-        setIdleModalVisible(true);
-        break;
-      case 'process':
-        setProcessModalVisible(true);
-        break;
-      case 'active':
-        setActiveModalVisible(true);
-        break;
-      case 'complete':
-        setCompleteModalVisible(true);
-        break;
-      default:
-        setIdleModalVisible(true);
-    }
-  };
-
   return (
     <>
-      <Header setModalVisible={handleHeaderButtonPress} />
       <TabSelector
         handleTabChange={handleTabChange}
-        selectedTab={selectedTab}
+        selectedTab={selectedTab as any}
       />
 
-      <MapTab type={selectedTab} />
+      <MapTab type={activeData} />
 
       {/* Individual Modals with raw data */}
       <IdleDriversModal

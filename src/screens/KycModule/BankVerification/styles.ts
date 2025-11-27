@@ -57,4 +57,11 @@ export const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
+  compressingText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
 });

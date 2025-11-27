@@ -1,6 +1,7 @@
+import { getVendorDetails } from '@api/endpoints/profile.api';
 import { useNavigation } from '@react-navigation/native';
 import { RootState } from '@store/index';
-import React, { FC, useCallback } from 'react';
+import React, { FC, useCallback, useLayoutEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
   Appbar,
@@ -21,6 +22,7 @@ interface Props {
   onEditPress?: () => void;
   activeTab: string;
   onTabChange?: (tab: string) => void;
+  isEditable?: boolean;
 }
 
 const PRIMARY = '#6366F1';
@@ -30,25 +32,53 @@ const ProfileLayout: FC<Props> = ({
   title = 'Company Profile',
   companyName = 'Company Name',
   onEditPress,
-  activeTab = 'Company Info',
+  activeTab = 'ProfileCompanyInfo',
   onTabChange,
+  isEditable,
 }) => {
   const navigation = useNavigation<any>();
   const kycStatus = useSelector((state: RootState) => state.auth?.kycStatus);
   const handleTabPress = useCallback(
     (tabTitle: string) => {
+      navigation.navigate(tabTitle);
       onTabChange?.(tabTitle);
     },
     [onTabChange],
   );
+  const [companyInfo, setCompanyInfo] = useState({ companyName: '' });
+  const vendorId = useSelector((state: RootState) => state?.auth?.token);
 
+  const fetchVendor = async () => {
+    try {
+      const resp = await getVendorDetails({ vendorid: vendorId });
+      if (resp?.status === '00') {
+        const data = resp?.data?.Vendor_Details?.[0];
+        setCompanyInfo(data);
+      }
+    } catch (e) {}
+  };
+
+  useLayoutEffect(() => {
+    if (vendorId) {
+      fetchVendor();
+    }
+  }, [vendorId]);
   return (
     <View style={styles.container}>
       {/* HEADER */}
       <Appbar.Header style={styles.appbar}>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
+        <Appbar.BackAction
+          onPress={() =>
+            navigation.navigate(
+              kycStatus === 'PENDING' ? 'TemporaryDashboard' : 'Dashboard',
+            )
+          }
+        />
         <Appbar.Content title={title} />
-        <Appbar.Action icon={'pencil'} onPress={onEditPress} />
+        <Appbar.Action
+          icon={isEditable ? 'close' : 'pencil'}
+          onPress={onEditPress}
+        />
       </Appbar.Header>
 
       {/* PROFILE CARD */}
@@ -57,7 +87,7 @@ const ProfileLayout: FC<Props> = ({
           <View style={styles.avatarWrapper}>
             <Avatar.Text
               size={60}
-              label={getInitials(companyName)}
+              label={getInitials(companyInfo?.companyName || companyName)}
               style={styles.avatar}
             />
 
@@ -70,7 +100,7 @@ const ProfileLayout: FC<Props> = ({
 
           <View style={styles.companyInfo}>
             <Text variant="titleLarge" style={styles.companyName}>
-              {companyName}
+              {companyInfo?.companyName || companyName}
             </Text>
             <Text variant="bodyMedium" style={styles.verifiedText}>
               {kycStatus === 'COMPLETED'
@@ -85,34 +115,21 @@ const ProfileLayout: FC<Props> = ({
       <Surface style={styles.tabsContainer} elevation={1}>
         <View style={styles.tabRow}>
           {tabs.map(tab => {
-            const isActive = tab.title === activeTab;
-
+            const isActive = tab.key === activeTab;
             return (
               <TouchableRipple
                 key={tab.key}
-                onPress={() => handleTabPress(tab.title)}
+                onPress={() => handleTabPress(tab.key)}
                 style={[styles.tabButton, isActive && styles.tabButtonActive]}
               >
                 <View style={styles.tabContent}>
                   <View style={styles.iconWrapper}>
                     <Avatar.Icon
-                      size={22}
+                      size={25}
                       icon={tab.icon}
                       style={styles.transparentBg}
                       color={isActive ? '#fff' : PRIMARY}
                     />
-
-                    {tab.count > 0 && (
-                      <Badge
-                        size={14}
-                        style={[
-                          styles.tabBadge,
-                          isActive ? styles.badgeActive : styles.badgeInactive,
-                        ]}
-                      >
-                        {tab.count}
-                      </Badge>
-                    )}
                   </View>
 
                   <Text

@@ -31,5 +31,8 @@
       <meta-data
      android:name="com.google.android.geo.API_KEY"
      android:value="AIzaSyDEHZXYz9qtWfkqi9GZTHnB2podKNwONHA"/>
+      <!-- <meta-data
+        android:name="android.security.net.config"
+        android:resource="@xml/network_security_config" /> -->
     </application>
 </manifest>

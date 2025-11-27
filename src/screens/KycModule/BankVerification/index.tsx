@@ -29,6 +29,7 @@ import Loader from '@components/common/Loader';
 import { useNavigation } from '@react-navigation/native';
 import { RootState } from '@store/index';
 import { setKycStatus } from '@store/slices/authSlice';
+import { convertToBase64 } from '@utils/formatter';
 import { Formik } from 'formik';
 import Toast from 'react-native-toast-message';
 import { useDispatch, useSelector } from 'react-redux';
@@ -106,16 +107,18 @@ const BankVerification = () => {
 
   const handleFinalSubmit = async (values: BankDetailsType) => {
     try {
-      console.log({ conpanyInfo });
+      console.log({ conpanyInfo, values });
       if (!conpanyInfo?.companyName) return;
       if (values?.bank_ac_holder_name === conpanyInfo?.companyName) {
+        const base64Img = await convertToBase64(passbookImage?.uri!);
         const resp = await validateBank({
           ...values,
+          cheque_img: base64Img,
           vendorid: vendorId,
         }).unwrap();
         if (resp?.status === '00') {
           dispatch(setKycStatus('COMPLETED'));
-          navigation.replace('Dashboard');
+          navigation.navigate('Dashboard');
         } else {
           Toast.show({ type: 'error', text1: resp?.message });
         }

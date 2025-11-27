@@ -39,7 +39,7 @@ export const StepOneSchema = Yup.object({
 
     state: Yup.string().required('State is required'),
 
-    destination: Yup.string().required('District is required'),
+    district: Yup.string().required('District is required'),
 
     Tahsil: Yup.string().required('Town/Tahsil is required'),
   }),

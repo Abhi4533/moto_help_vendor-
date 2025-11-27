@@ -54,7 +54,7 @@ const initialValues = {
   pincode: '',
   Tahsil: '',
   state: '',
-  City: '',
+  district: '',
 };
 
 const ProfileCompanyInfo: React.FC<Props> = ({ onTabChange }) => {
@@ -82,6 +82,7 @@ const ProfileCompanyInfo: React.FC<Props> = ({ onTabChange }) => {
         Toast.show({ type: 'error', text1: resp?.message });
       }
     } catch (e) {
+      console.log({ e });
       Toast.show({ type: 'error', text1: 'Something went wrong!' });
     } finally {
       setLoading(false);
@@ -89,8 +90,10 @@ const ProfileCompanyInfo: React.FC<Props> = ({ onTabChange }) => {
   };
 
   useLayoutEffect(() => {
-    fetchVendor();
-  }, []);
+    if (vendorId) {
+      fetchVendor();
+    }
+  }, [vendorId]);
 
   const handlePincodeChange = async (pin: string, setFieldValue: any) => {
     try {
@@ -101,10 +104,11 @@ const ProfileCompanyInfo: React.FC<Props> = ({ onTabChange }) => {
         if (response?.data?.status === '00') {
           const addressData = response.data.data || response.data;
           setFieldValue('state', addressData?.State?.toUpperCase() || '');
-          setFieldValue('City', addressData?.District?.toUpperCase());
+          setState(addressData?.State?.toUpperCase() || '');
+          setFieldValue('district', addressData?.District?.toUpperCase());
         } else {
           setFieldValue('state', '');
-          setFieldValue('City', '');
+          setFieldValue('district', '');
         }
       }
     } catch (error) {}
@@ -116,61 +120,76 @@ const ProfileCompanyInfo: React.FC<Props> = ({ onTabChange }) => {
       validationSchema={validationSchema}
       enableReinitialize
       onSubmit={async values => {
+        const payload = JSON.parse(JSON.stringify(values));
+        delete payload.insert_date;
+        delete payload.update_date;
+        delete payload.flag;
+        delete payload.kyc_verify;
+        delete payload.vendor_onboarded;
+        delete payload.status;
+        delete payload.role;
+        delete payload.employee_count;
+        delete payload.vehicle_count;
+
         const resp = await postUpdateVendorDetails({
-          ...values,
+          ...payload,
           vendorid: vendorId,
         });
         if (resp?.status === '00') {
-          Toast.show({ type: 'success', text1: resp?.message });
           setEditable(false);
         } else {
           Toast.show({ type: 'error', text1: resp?.message });
         }
       }}
     >
-      {({ values, handleChange, errors, handleSubmit, setFieldValue }) => (
-        <ProfileLayout
-          activeTab="Company Info"
-          onTabChange={onTabChange}
-          onEditPress={() => setEditable(prev => !prev)}
-        >
-          <Loader visible={loading} />
+      {({ values, handleChange, errors, handleSubmit, setFieldValue }) => {
+        console.log({ errors, values });
+        return (
+          <ProfileLayout
+            activeTab="ProfileCompanyInfo"
+            onTabChange={onTabChange}
+            isEditable={editable}
+            onEditPress={() => setEditable(prev => !prev)}
+          >
+            <Loader visible={loading} />
 
-          {/* MAIN CONTAINER */}
-          <View style={styles.container}>
-            {/* SCROLLABLE CONTENT */}
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-              <Card style={styles.contentCard}>
-                <Card.Content style={styles.cardContent}>
-                  {/* Company Details */}
-                  <View style={styles.section}>
-                    <Text variant="titleMedium" style={styles.sectionTitle}>
-                      Company Details
-                    </Text>
+            {/* MAIN CONTAINER */}
+            <View style={styles.container}>
+              {/* SCROLLABLE CONTENT */}
+              <ScrollView contentContainerStyle={styles.scrollContent}>
+                <Card style={styles.contentCard}>
+                  <Card.Content style={styles.cardContent}>
+                    {/* Company Details */}
+                    <View style={styles.section}>
+                      <Text variant="titleMedium" style={styles.sectionTitle}>
+                        Company Details
+                      </Text>
 
-                    <Dropdown
-                      label="Company Type *"
-                      data={companyTypedata}
-                      value={values?.companyType}
-                      onChange={(val: any) => handleChange('companyType')(val)}
-                      error={!!errors?.companyType}
-                      errorMessage={errors?.companyType}
-                      disabled={!editable}
-                    />
+                      <Dropdown
+                        label="Company Type *"
+                        data={companyTypedata}
+                        value={values?.companyType}
+                        onChange={(val: any) =>
+                          handleChange('companyType')(val)
+                        }
+                        error={!!errors?.companyType}
+                        errorMessage={errors?.companyType}
+                        disabled={!editable}
+                      />
 
-                    <Input
-                      label="Company Name"
-                      value={values.companyName}
-                      onChangeText={handleChange('companyName')}
-                      mode="outlined"
-                      editable={editable}
-                      style={[styles.input, { marginTop: 10 }]}
-                      outlineStyle={styles.inputOutline}
-                      error={errors.companyName}
-                    />
+                      <Input
+                        label="Company Name"
+                        value={values.companyName}
+                        onChangeText={handleChange('companyName')}
+                        mode="outlined"
+                        editable={editable}
+                        style={[styles.input, { marginTop: 10 }]}
+                        outlineStyle={styles.inputOutline}
+                        error={errors.companyName}
+                      />
 
-                    {values?.companyType !== 'CHALAK MALAK' &&
-                      values?.companyType !== 'OWENER/INDIVIDUAL' && (
+                      {(values?.companyType === 'CHALAK MALAK' ||
+                        values?.companyType === 'OWENER/INDIVIDUAL') && (
                         <Input
                           label="Owner Name"
                           value={values.owner_name}
@@ -183,122 +202,123 @@ const ProfileCompanyInfo: React.FC<Props> = ({ onTabChange }) => {
                         />
                       )}
 
-                    <Input
-                      label="Mobile Number"
-                      value={values.mobileNo}
-                      onChangeText={handleChange('mobileNo')}
-                      mode="outlined"
-                      editable={editable}
-                      keyboardType="phone-pad"
-                      style={styles.input}
-                      outlineStyle={styles.inputOutline}
-                      error={errors.mobileNo}
-                    />
-                  </View>
-
-                  {/* Address Info */}
-                  <View style={styles.section}>
-                    <Text variant="titleMedium" style={styles.sectionTitle}>
-                      Address Information
-                    </Text>
-
-                    <Input
-                      label="Building, Apartment, Plot Number"
-                      value={values.address1}
-                      onChangeText={handleChange('address1')}
-                      mode="outlined"
-                      editable={editable}
-                      multiline
-                      style={styles.input}
-                      outlineStyle={styles.inputOutline}
-                      error={errors.address1}
-                    />
-
-                    <Input
-                      label="Area, Street, Sector, Village"
-                      value={values.address2}
-                      onChangeText={handleChange('address2')}
-                      mode="outlined"
-                      editable={editable}
-                      multiline
-                      style={styles.input}
-                      outlineStyle={styles.inputOutline}
-                      error={errors.address2}
-                    />
-
-                    <View style={styles.compactRow}>
-                      <View style={{ flex: 1 }}>
-                        <Input
-                          label="Pincode *"
-                          value={values.pincode}
-                          onChangeText={text =>
-                            handlePincodeChange(text, setFieldValue)
-                          }
-                          mode="outlined"
-                          editable={editable}
-                          keyboardType="number-pad"
-                          maxLength={6}
-                          style={[styles.input, styles.compactInput]}
-                          outlineStyle={styles.inputOutline}
-                          error={errors.pincode}
-                        />
-                      </View>
-
-                      <View style={{ flex: 1 }}>
-                        <Input
-                          label="Town/Tahsil *"
-                          value={values.Tahsil}
-                          onChangeText={handleChange('Tahsil')}
-                          mode="outlined"
-                          editable={editable}
-                          style={[styles.input, styles.compactInput]}
-                          outlineStyle={styles.inputOutline}
-                          error={errors.Tahsil}
-                        />
-                      </View>
+                      <Input
+                        label="Mobile Number"
+                        value={values.mobileNo}
+                        onChangeText={handleChange('mobileNo')}
+                        mode="outlined"
+                        editable={editable}
+                        keyboardType="phone-pad"
+                        style={styles.input}
+                        outlineStyle={styles.inputOutline}
+                        error={errors.mobileNo}
+                      />
                     </View>
 
-                    <Dropdown
-                      label="State *"
-                      data={stateData?.data || []}
-                      value={values?.state}
-                      onChange={(val: string | string[]) => {
-                        setFieldValue('state', val);
-                        setState(val as string);
-                        setFieldValue('City', '');
-                      }}
-                      error={!!errors?.state}
-                      errorMessage={errors?.state}
-                      disabled={!editable}
-                    />
+                    {/* Address Info */}
+                    <View style={styles.section}>
+                      <Text variant="titleMedium" style={styles.sectionTitle}>
+                        Address Information
+                      </Text>
 
-                    <Dropdown
-                      label="District *"
-                      data={districtData?.data || []}
-                      value={values?.City}
-                      onChange={(val: string | string[]) =>
-                        setFieldValue('City', val)
-                      }
-                      error={!!errors?.City}
-                      errorMessage={errors?.City}
-                      disabled={!editable}
-                    />
-                  </View>
-                </Card.Content>
-              </Card>
-            </ScrollView>
+                      <Input
+                        label="Building, Apartment, Plot Number"
+                        value={values.address1}
+                        onChangeText={handleChange('address1')}
+                        mode="outlined"
+                        editable={editable}
+                        multiline
+                        style={styles.input}
+                        outlineStyle={styles.inputOutline}
+                        error={errors.address1}
+                      />
 
-            {/* STICKY BUTTON */}
-            {editable && (
-              <View style={styles.stickyFooter}>
-                <Button mode="contained" onPress={() => handleSubmit()}>
-                  Save Changes
-                </Button>
-              </View>
-            )}
-          </View>
-        </ProfileLayout>
-      )}
+                      <Input
+                        label="Area, Street, Sector, Village"
+                        value={values.address2}
+                        onChangeText={handleChange('address2')}
+                        mode="outlined"
+                        editable={editable}
+                        multiline
+                        style={styles.input}
+                        outlineStyle={styles.inputOutline}
+                        error={errors.address2}
+                      />
+
+                      <View style={styles.compactRow}>
+                        <View style={{ flex: 1 }}>
+                          <Input
+                            label="Pincode *"
+                            value={values.pincode}
+                            onChangeText={text =>
+                              handlePincodeChange(text, setFieldValue)
+                            }
+                            mode="outlined"
+                            editable={editable}
+                            keyboardType="number-pad"
+                            maxLength={6}
+                            style={[styles.input, styles.compactInput]}
+                            outlineStyle={styles.inputOutline}
+                            error={errors.pincode}
+                          />
+                        </View>
+
+                        <View style={{ flex: 1 }}>
+                          <Input
+                            label="Town/Tahsil *"
+                            value={values.Tahsil}
+                            onChangeText={handleChange('Tahsil')}
+                            mode="outlined"
+                            editable={editable}
+                            style={[styles.input, styles.compactInput]}
+                            outlineStyle={styles.inputOutline}
+                            error={errors.Tahsil}
+                          />
+                        </View>
+                      </View>
+
+                      <Dropdown
+                        label="State *"
+                        data={stateData?.data || []}
+                        value={values?.state}
+                        onChange={(val: string | string[]) => {
+                          setFieldValue('state', val);
+                          setState(val as string);
+                          setFieldValue('district', '');
+                        }}
+                        error={!!errors?.state}
+                        errorMessage={errors?.state}
+                        disabled={!editable}
+                      />
+
+                      <Dropdown
+                        label="District *"
+                        data={districtData?.data || []}
+                        value={values?.district}
+                        onChange={(val: string | string[]) =>
+                          setFieldValue('district', val)
+                        }
+                        error={!!errors?.district}
+                        errorMessage={errors?.district}
+                        disabled={!editable && !values?.state}
+                      />
+                    </View>
+                  </Card.Content>
+                </Card>
+              </ScrollView>
+
+              {/* STICKY BUTTON */}
+              {editable && (
+                <View style={styles.stickyFooter}>
+                  <Button mode="contained" onPress={() => handleSubmit()}>
+                    Save Changes
+                  </Button>
+                </View>
+              )}
+            </View>
+          </ProfileLayout>
+        );
+      }}
     </Formik>
   );
 };

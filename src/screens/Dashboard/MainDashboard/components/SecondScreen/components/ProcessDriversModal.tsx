@@ -1,5 +1,4 @@
-import { ProcessDriverData } from '@api/api.type';
-import { initializeTrip } from '@store/slice/mapTabSlice';
+import { setDriverAndPickupLocations } from '@store/slices/mapSlice';
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -23,7 +22,7 @@ import { useDispatch } from 'react-redux';
 interface ProcessDriversModalProps {
   visible: boolean;
   onDismiss: () => void;
-  rawData: ProcessDriverData[];
+  rawData: any[];
 }
 
 const ProcessDriversModal: React.FC<ProcessDriversModalProps> = ({
@@ -48,29 +47,24 @@ const ProcessDriversModal: React.FC<ProcessDriversModalProps> = ({
     );
   }, [rawData, searchQuery]);
 
-  const handleDriverPress = (driver: ProcessDriverData) => {
-    console.log('Selected driver:', driver);
-
+  const handleDriverPress = (driver: any) => {
     dispatch(
-      initializeTrip({
-        driverCoordinate: {
+      setDriverAndPickupLocations({
+        driver: {
           latitude: driver?.Driver_Latitude,
           longitude: driver?.Driver_Longitude,
         },
-        destination: null,
-        origin: {
+        pickup: {
           latitude: driver?.pickup_Latitude,
           longitude: driver?.pickup_Longitude,
         },
-        parcels: [],
-        tripId: driver?.driver_id,
       }),
     );
 
     onDismiss();
   };
 
-  const renderDriverItem = ({ item }: { item: ProcessDriverData }) => (
+  const renderDriverItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       onPress={() => handleDriverPress(item)}
       style={[
@@ -95,8 +89,8 @@ const ProcessDriversModal: React.FC<ProcessDriversModalProps> = ({
                     item.Trip_Status === 'Progress'
                       ? styles.progressChip
                       : item.Trip_Status === 'Completed'
-                        ? styles.completedChip
-                        : styles.pendingChip,
+                      ? styles.completedChip
+                      : styles.pendingChip,
                   ]}
                 >
                   {item.Trip_Status?.toUpperCase() || 'IN PROCESS'}
@@ -166,7 +160,9 @@ const ProcessDriversModal: React.FC<ProcessDriversModalProps> = ({
           <Appbar.BackAction onPress={onDismiss} />
           <Appbar.Content
             title="Drivers in Process"
-            subtitle={`${filteredData.length} driver${filteredData.length !== 1 ? 's' : ''} processing`}
+            subtitle={`${filteredData.length} driver${
+              filteredData.length !== 1 ? 's' : ''
+            } processing`}
           />
           <Badge
             size={24}

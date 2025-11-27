@@ -235,6 +235,34 @@ export const api = createApi({
         body: queryArg,
       }),
     }),
+    nearestCustomerPosts: builder.mutation<
+      any,
+      {
+        VendorID: string;
+        vendorLat: number;
+        vendorLng: number;
+        radius: number;
+      }
+    >({
+      query: queryArg => ({
+        url: '/vendor_nearest_customer_postcard',
+        method: 'POST',
+        body: queryArg,
+      }),
+    }),
+    getAssignedVehicles: builder.mutation<
+      any,
+      {
+        VendorID: string;
+        verify_flag?: 'Y' | 'N' | undefined;
+      }
+    >({
+      query: queryArg => ({
+        url: `/get_Driver_Vehicle_Assign`,
+        method: 'POST',
+        body: queryArg,
+      }),
+    }),
   }),
 });
 
@@ -250,6 +278,8 @@ export const {
   useValidateVehicleMutation,
   useValidateLicenceMutation,
   useValidateBankMutation,
+  useNearestCustomerPostsMutation,
+  useGetAssignedVehiclesMutation,
 } = api;
 
 export default api;
