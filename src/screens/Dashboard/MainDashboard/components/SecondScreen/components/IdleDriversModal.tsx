@@ -1,4 +1,7 @@
-import { setDriverAndCustomerLocations } from '@store/slices/mapSlice';
+import {
+  clearMapData,
+  setDriverAndCustomerLocations,
+} from '@store/slices/mapSlice';
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -73,7 +76,7 @@ const IdleDriversModal: React.FC<IdleDriversModalProps> = ({
   });
 
   const handleDriverPress = (driver: any) => {
-    console.log({ driver });
+    dispatch(clearMapData());
     const loadsData: any = (driver.loads || [])
       .filter(
         (load: any) =>

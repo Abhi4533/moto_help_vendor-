@@ -1,4 +1,7 @@
-import { setDriverPickupAndDestinationLocations } from '@store/slices/mapSlice';
+import {
+  clearMapData,
+  setDriverPickupAndDestinationLocations,
+} from '@store/slices/mapSlice';
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -56,6 +59,7 @@ const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
   }, [rawData, searchQuery]);
 
   const handleDriverPress = (driver: any) => {
+    dispatch(clearMapData());
     dispatch(
       setDriverPickupAndDestinationLocations({
         driver: {

@@ -1,6 +1,12 @@
 // components/MapTab.tsx
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Alert, Dimensions, StyleSheet, View } from 'react-native';
 import MapView, {
   Marker,
   Polyline,
@@ -19,6 +25,7 @@ import Truck from '@assets/map/Truck';
 // Utils & Styles
 import { ENV } from '@config/env';
 import { COLORS } from '@config/theme';
+import Geolocation from '@react-native-community/geolocation';
 import { RootState } from '@store/index';
 import { Coordinate } from '@store/slices/mapSlice';
 import { INDIA_REGION, MAP_STYLE } from '@utils/mapHelper';
@@ -60,10 +67,9 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MapTab: React.FC<MapTabProps> = ({ type }) => {
   const mapRef = useRef<MapView>(null);
   const [calculatingRoutes, setCalculatingRoutes] = React.useState(false);
-
+  const [vendorLocation, setVendorLocation] = useState<any | null>(null);
   // Extract map state from Redux using your existing slice
   const {
-    vendorLocation,
     pickupLocation,
     destinationLocation,
     liveDriverLocation,
@@ -72,16 +78,19 @@ const MapTab: React.FC<MapTabProps> = ({ type }) => {
     routePath,
   } = useSelector((state: RootState) => state.map);
 
-  console.log('Map Data:', {
-    vendorLocation,
-    pickupLocation,
-    destinationLocation,
-    liveDriverLocation,
-    driverLocations,
-    customerLocations,
-    routePath,
-    type,
-  });
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      pos => {
+        setVendorLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
+      },
+      error => Alert.alert('Location Error', JSON.stringify(error)),
+      { enableHighAccuracy: true },
+    );
+  }, []);
 
   // Get valid coordinates
   const validDriverCoordinate = useMemo(() => {
@@ -595,21 +604,6 @@ const MapTab: React.FC<MapTabProps> = ({ type }) => {
     </>
   );
 
-  // Map Controls Component
-  const MapControls = () => (
-    <View style={mapStyles.mapControls}>
-      <Button
-        mode="contained"
-        onPress={handleFitToView}
-        style={mapStyles.fitButton}
-        icon="fit-to-page"
-        compact
-      >
-        Fit View
-      </Button>
-    </View>
-  );
-
   return (
     <View style={styles.mapContainer}>
       <MapView
@@ -641,9 +635,6 @@ const MapTab: React.FC<MapTabProps> = ({ type }) => {
         {renderMapContent()}
       </MapView>
 
-      {/* Map Controls */}
-      <MapControls />
-
       {/* Loading Indicator */}
       {calculatingRoutes && (
         <View style={mapStyles.loadingContainer}>
@@ -654,7 +645,7 @@ const MapTab: React.FC<MapTabProps> = ({ type }) => {
       )}
 
       {/* Status Indicator */}
-      {!hasDataForCurrentType && (
+      {/* {!hasDataForCurrentType && (
         <View style={mapStyles.noDataContainer}>
           <View style={mapStyles.noDataMessage}>
             <Button icon="map-marker-question" mode="contained" disabled>
@@ -662,7 +653,7 @@ const MapTab: React.FC<MapTabProps> = ({ type }) => {
             </Button>
           </View>
         </View>
-      )}
+      )} */}
     </View>
   );
 };

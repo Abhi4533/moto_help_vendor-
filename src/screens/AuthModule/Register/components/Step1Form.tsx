@@ -92,6 +92,7 @@ const Step1Form: React.FC = () => {
           }
           mode="outlined"
           left={<TextInput.Icon icon="office-building" size={18} />}
+          autoCapitalize="characters"
         />
         {/* Owner Name for Business Entities */}
         {!isChalakmalakOrIndividual && (
@@ -100,6 +101,7 @@ const Step1Form: React.FC = () => {
             label="Owner Name (Name As per Aadhaar) *"
             mode="outlined"
             left={<TextInput.Icon icon="account" size={18} />}
+            autoCapitalize="characters"
           />
         )}
 
@@ -125,12 +127,14 @@ const Step1Form: React.FC = () => {
           label="Building, Apartment, Plot Number *"
           mode="outlined"
           left={<TextInput.Icon icon="home" size={18} />}
+          autoCapitalize="characters"
         />
         <FormikInput
           name="VendorDetails.address2"
           label="Area, Street, Sector, Village"
           mode="outlined"
           left={<TextInput.Icon icon="road" size={18} />}
+          autoCapitalize="characters"
         />
 
         {/* Location Details in Compact Row */}
@@ -171,6 +175,7 @@ const Step1Form: React.FC = () => {
           editable={
             !!values?.VendorDetails?.state && !!values?.VendorDetails?.district
           }
+          autoCapitalize="characters"
         />
       </View>
     </View>
