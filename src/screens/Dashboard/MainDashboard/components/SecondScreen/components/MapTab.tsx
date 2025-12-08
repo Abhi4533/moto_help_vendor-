@@ -6,13 +6,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, Dimensions, StyleSheet, View } from 'react-native';
-import MapView, {
-  LatLng,
-  Marker,
-  Polyline,
-  PROVIDER_GOOGLE,
-} from 'react-native-maps';
+import { Dimensions, StyleSheet, View } from 'react-native';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import { useSelector } from 'react-redux';
 
@@ -25,7 +20,6 @@ import Truck from '@assets/map/Truck';
 // Utils & Styles
 import { ENV } from '@config/env';
 import { COLORS } from '@config/theme';
-import Geolocation from '@react-native-community/geolocation';
 import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
 import { RootState } from '@store/index';
 import { Coordinate } from '@store/slices/mapSlice';
@@ -41,10 +35,6 @@ const MapTab = () => {
   const { selectedTab: type } = useDashboard();
   const mapRef = useRef<MapView>(null);
   const [calculatingRoutes, setCalculatingRoutes] = useState(false);
-  const [vendorLocation, setVendorLocation] = useState<any | null>(null);
-  const [directionsCoordinates, setDirectionsCoordinates] = useState<LatLng[]>(
-    [],
-  );
 
   // Extract map state from Redux using your existing slice
   const {
@@ -54,21 +44,9 @@ const MapTab = () => {
     driverLocations,
     customerLocations,
     routePath,
+    vendorLocation,
   } = useSelector((state: RootState) => state.map);
-
-  useEffect(() => {
-    Geolocation.getCurrentPosition(
-      pos => {
-        setVendorLocation({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        });
-      },
-      error => Alert.alert('Location Error', JSON.stringify(error)),
-      { enableHighAccuracy: true },
-    );
-  }, []);
+  console.log({ vendorLocation });
 
   // Get valid coordinates
   const validDriverCoordinate = useMemo(() => {
@@ -194,7 +172,6 @@ const MapTab = () => {
     // Add route path coordinates
     routePath.filter(isValidCoordinate).forEach(addCoordinate);
 
-    console.log('All coordinates to fit:', allCoords.length, allCoords);
     return allCoords;
   }, [
     type,
@@ -206,94 +183,6 @@ const MapTab = () => {
     validCustomerLocations,
     routePath,
   ]);
-
-  // Function to calculate bounding box with proper padding
-  const calculateBoundingBox = useCallback((coordinates: Coordinate[]) => {
-    if (coordinates.length === 0) {
-      return {
-        minLat: INDIA_REGION.latitude - INDIA_REGION.latitudeDelta / 2,
-        maxLat: INDIA_REGION.latitude + INDIA_REGION.latitudeDelta / 2,
-        minLng: INDIA_REGION.longitude - INDIA_REGION.longitudeDelta / 2,
-        maxLng: INDIA_REGION.longitude + INDIA_REGION.longitudeDelta / 2,
-      };
-    }
-
-    const latitudes = coordinates.map(c => c.latitude);
-    const longitudes = coordinates.map(c => c.longitude);
-
-    let minLat = Math.min(...latitudes);
-    let maxLat = Math.max(...latitudes);
-    let minLng = Math.min(...longitudes);
-    let maxLng = Math.max(...longitudes);
-
-    // Add 15% padding
-    const latPadding = (maxLat - minLat) * 0.15;
-    const lngPadding = (maxLng - minLng) * 0.15;
-
-    minLat -= latPadding;
-    maxLat += latPadding;
-    minLng -= lngPadding;
-    maxLng += lngPadding;
-
-    // Ensure minimum size (in case all points are very close)
-    const MIN_LAT_DIFF = 0.01; // ~1.1km
-    const MIN_LNG_DIFF = 0.01;
-
-    if (maxLat - minLat < MIN_LAT_DIFF) {
-      const centerLat = (minLat + maxLat) / 2;
-      minLat = centerLat - MIN_LAT_DIFF / 2;
-      maxLat = centerLat + MIN_LAT_DIFF / 2;
-    }
-
-    if (maxLng - minLng < MIN_LNG_DIFF) {
-      const centerLng = (minLng + maxLng) / 2;
-      minLng = centerLng - MIN_LNG_DIFF / 2;
-      maxLng = centerLng + MIN_LNG_DIFF / 2;
-    }
-
-    return { minLat, maxLat, minLng, maxLng };
-  }, []);
-
-  // Fit ALL coordinates to map
-  const fitAllCoordinates = useCallback(() => {
-    const coordinates = getAllCoordinates();
-
-    if (coordinates.length === 0) {
-      mapRef.current?.animateToRegion(INDIA_REGION, 1000);
-      return;
-    }
-
-    const { minLat, maxLat, minLng, maxLng } =
-      calculateBoundingBox(coordinates);
-
-    const latitude = (minLat + maxLat) / 2;
-    const longitude = (minLng + maxLng) / 2;
-
-    const latDelta = maxLat - minLat;
-    const lngDelta = maxLng - minLng;
-
-    // Adjust for screen aspect ratio
-    const region = {
-      latitude,
-      longitude,
-      latitudeDelta: Math.max(latDelta, lngDelta / ASPECT_RATIO),
-      longitudeDelta: Math.max(lngDelta, latDelta * ASPECT_RATIO),
-    };
-
-    console.log('Fitting to region:', region);
-    mapRef.current?.fitToCoordinates(coordinates, {
-      edgePadding: {
-        top: 50,
-        right: 50,
-        bottom: 50,
-        left: 50,
-      },
-      animated: true,
-    });
-
-    // Also animate to the calculated region for better control
-    mapRef.current?.animateToRegion(region, 1000);
-  }, [getAllCoordinates, calculateBoundingBox]);
 
   // Improved fit using fitToCoordinates method
   const fitToMarkersAndRoutes = useCallback(() => {
@@ -322,11 +211,8 @@ const MapTab = () => {
   const handleDirectionsReady = useCallback(
     (result: any) => {
       setCalculatingRoutes(false);
-
       // Extract coordinates from the route
       if (result?.coordinates && Array.isArray(result.coordinates)) {
-        setDirectionsCoordinates(prev => [...prev, ...result.coordinates]);
-
         // Refit after getting route coordinates
         setTimeout(fitToMarkersAndRoutes, 500);
       }
@@ -642,6 +528,8 @@ const MapTab = () => {
         toolbarEnabled={false}
         onLayout={fitToMarkersAndRoutes}
         onMapReady={fitToMarkersAndRoutes}
+        maxZoomLevel={13} // set your max zoom
+        minZoomLevel={5} // optional: set min zoom
       >
         {renderMapContent()}
       </MapView>

@@ -87,7 +87,7 @@ const mapSlice = createSlice({
     },
 
     clearMapData(state) {
-      Object.assign(state, initialState);
+      state = initialState;
     },
   },
 });

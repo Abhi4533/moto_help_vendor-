@@ -21,7 +21,7 @@ const TabSelector = () => {
           },
           {
             value: 'process',
-            label: 'Process',
+            label: 'process',
             icon: 'refresh-circle',
             style: {
               backgroundColor:

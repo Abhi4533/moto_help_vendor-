@@ -28,6 +28,7 @@ import {
   useGetStateQuery,
   useValidateLicenceMutation,
 } from '@api/hooks_api';
+import FormikInput from '@components/common/FormikInput';
 import { useDebouncedCallback } from '@hooks/useDebounce';
 import { RootState } from '@store/index';
 import {
@@ -213,9 +214,9 @@ const AddDriverModal: FC<AddDriverModalProps> = ({
                     {/* License Section */}
                     <Card style={styles.card} mode="contained">
                       <Card.Content style={styles.cardContent}>
-                        <Input
+                        <FormikInput
+                          name="driving_license_no"
                           label="Driving License Number *"
-                          value={values.driving_license_no}
                           mode="outlined"
                           placeholder="DL1420110002341"
                           left={<TextInput.Icon icon="card-account-details" />}
@@ -223,7 +224,6 @@ const AddDriverModal: FC<AddDriverModalProps> = ({
                             setFieldValue('driving_license_no', t);
                             debouncedCheckExists(t, setFieldError);
                           }}
-                          error={errors.driving_license_no}
                           autoCapitalize="characters"
                         />
 
@@ -323,50 +323,40 @@ const AddDriverModal: FC<AddDriverModalProps> = ({
                           Personal Information
                         </Text>
 
-                        <Input
+                        <FormikInput
                           label="Full Name as per DL *"
-                          value={values.full_name}
                           mode="outlined"
-                          onChangeText={t => setFieldValue('full_name', t)}
-                          error={errors.full_name}
+                          name="full_name"
                           editable={false}
                         />
 
                         <View style={styles.row}>
                           <View style={styles?.flex1}>
-                            <Input
+                            <FormikInput
+                              name="Phone"
                               label="Phone *"
-                              value={values.Phone}
                               mode="outlined"
                               keyboardType="phone-pad"
                               maxLength={10}
-                              onChangeText={t => setFieldValue('Phone', t)}
-                              error={errors.Phone}
                             />
                           </View>
 
                           <View style={styles?.flex1}>
-                            <Input
+                            <FormikInput
+                              name="emergency_phone"
                               label="Family Contact *"
-                              value={values.emergency_phone}
                               mode="outlined"
                               keyboardType="phone-pad"
                               maxLength={10}
-                              onChangeText={t =>
-                                setFieldValue('emergency_phone', t)
-                              }
-                              error={errors.emergency_phone}
                             />
                           </View>
                         </View>
 
-                        <Input
+                        <FormikInput
+                          name="Email"
                           label="Email"
-                          value={values.Email}
                           mode="outlined"
-                          onChangeText={t => setFieldValue('Email', t)}
                           keyboardType="email-address"
-                          error={errors.Email}
                         />
                       </Card.Content>
                     </Card>
@@ -378,46 +368,39 @@ const AddDriverModal: FC<AddDriverModalProps> = ({
                           Current Address
                         </Text>
 
-                        <Input
+                        <FormikInput
+                          name="address1"
                           label="Building, Apartment *"
                           mode="outlined"
-                          value={values.address1}
-                          onChangeText={t => setFieldValue('address1', t)}
-                          error={errors.address1}
                           autoCapitalize="characters"
                         />
 
-                        <Input
+                        <FormikInput
+                          name="address2"
                           label="Street, Area"
                           mode="outlined"
-                          value={values.address2}
-                          onChangeText={t => setFieldValue('address2', t)}
-                          error={errors.address2}
                           autoCapitalize="characters"
                         />
 
                         <View style={styles.row}>
                           <View style={styles?.flex1}>
-                            <Input
+                            <FormikInput
+                              name="pincode"
                               label="Pincode *"
-                              value={values.pincode}
                               mode="outlined"
                               maxLength={6}
                               keyboardType="number-pad"
                               onChangeText={t =>
                                 handlePincodeChange(t, setFieldValue)
                               }
-                              error={errors?.pincode}
                             />
                           </View>
                           <View style={styles?.flex1}>
-                            <Input
+                            <FormikInput
+                              name="Tahsil"
                               label="Town/Tahsil *"
-                              value={values.Tahsil}
                               mode="outlined"
-                              onChangeText={t => setFieldValue('Tahsil', t)}
                               style={styles.flex1}
-                              error={errors.Tahsil}
                               autoCapitalize="characters"
                             />
                           </View>

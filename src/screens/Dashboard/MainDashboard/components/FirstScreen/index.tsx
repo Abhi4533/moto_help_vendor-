@@ -1,26 +1,23 @@
 import { getNearbyCustomerPosts } from '@api/endpoints/dashboard.api';
 import OriginMarker from '@assets/map/OriginMarker';
 import Parcel from '@assets/map/parcel';
-import Geolocation from '@react-native-community/geolocation';
 import { useNavigation } from '@react-navigation/native';
 import { RootState } from '@store/index';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Button, Card, Icon, Text } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { quickActions } from './helper';
 import { styles } from './style';
-import { CustomerPost, DEFAULT_INDIA_REGION, VendorLocation } from './types';
+import { CustomerPost, DEFAULT_INDIA_REGION } from './types';
 
 const FirstScreen = () => {
   const vendorId = useSelector((state: RootState) => state?.auth?.token);
   const navigation = useNavigation<any>();
   const mapRef = useRef<MapView>(null);
 
-  const [vendorLocation, setVendorLocation] = useState<VendorLocation | null>(
-    null,
-  );
+  const { vendorLocation } = useSelector((state: RootState) => state.map);
   const [customerPosts, setCustomerPosts] = useState<CustomerPost[]>([]);
 
   /* ---------- FIT FUNCTION ---------- */
@@ -57,21 +54,6 @@ const FirstScreen = () => {
       }
     } catch (error) {}
   };
-
-  /* ---------- Load vendor location ---------- */
-  useEffect(() => {
-    Geolocation.getCurrentPosition(
-      pos => {
-        setVendorLocation({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        });
-      },
-      error => Alert.alert('Location Error', JSON.stringify(error)),
-      { enableHighAccuracy: true },
-    );
-  }, []);
 
   /* ---------- Fetch customers when vendor changes ---------- */
   useEffect(() => {
@@ -151,6 +133,8 @@ const FirstScreen = () => {
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={DEFAULT_INDIA_REGION}
+          maxZoomLevel={13} // set your max zoom
+          minZoomLevel={5} // optional: set min zoom
         >
           {/* Vendor Marker */}
           {vendorLocation && (

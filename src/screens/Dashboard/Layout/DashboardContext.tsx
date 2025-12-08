@@ -4,6 +4,7 @@ import {
   getAvailableVehicles,
   getProcessVehicles,
 } from '@api/endpoints/vehicle.api';
+import Geolocation from '@react-native-community/geolocation';
 import { useIsFocused } from '@react-navigation/native';
 import { RootState } from '@store/index';
 import {
@@ -11,14 +12,17 @@ import {
   setDriverAndCustomerLocations,
   setDriverAndPickupLocations,
   setDriverPickupAndDestinationLocations,
+  setVendorLocation,
 } from '@store/slices/mapSlice';
 import { TAB_CONFIG } from '@utils/mapHelper';
 import React, {
   createContext,
   useContext,
+  useEffect,
   useLayoutEffect,
   useState,
 } from 'react';
+import { Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 
 interface DashboardContextProps {
@@ -62,26 +66,49 @@ export const DashboardProvider = ({
     undefined,
     undefined,
   ]);
-  useLayoutEffect(() => {
-    const fetchData = async () => {
-      if (vendorid) {
-        try {
-          const response = await Promise.all([
-            getAvailableVehicles({ vendorid }),
-            getActiveVehicles({ vendorid }),
-            getProcessVehicles({ vendorid }),
-          ]);
-          setAllData(response);
-        } catch (error) {
-          console.error('Error fetching dashboard data:', error);
-        }
-      }
-    };
 
+  const fetchData = async () => {
+    if (vendorid) {
+      try {
+        const response = await Promise.all([
+          getAvailableVehicles({ vendorid }),
+          getActiveVehicles({ vendorid }),
+          getProcessVehicles({ vendorid }),
+        ]);
+        setAllData(response);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    }
+  };
+
+  useLayoutEffect(() => {
     fetchData();
   }, [isFocus, vendorid]);
 
+  useEffect(() => {
+    const loadsData: any = (allData?.[0]?.data?.[0]?.loads || [])
+      .filter(
+        (load: any) =>
+          load.pickup_Latitude !== 0 && load.pickup_Longitude !== 0,
+      )
+      .map((load: any) => ({
+        latitude: load.pickup_Latitude || 0,
+        longitude: load.pickup_Longitude || 0,
+      }));
+    dispatch(
+      setDriverAndCustomerLocations({
+        driver: {
+          latitude: allData?.[0]?.data?.[0]?.driver?.Driver_Latitude || 0,
+          longitude: allData?.[0]?.data?.[0]?.Driver_Longitude || 0,
+        },
+        customers: loadsData.map((load: any) => load.coordinate),
+      }),
+    );
+  }, []);
+
   const handleHeaderButtonPress = (sel?: any) => {
+    console.log({ sel });
     dispatch(clearMapData());
     switch (sel || selectedTab) {
       case 'idle':
@@ -147,12 +174,28 @@ export const DashboardProvider = ({
     }
   };
 
-  const handleTabChange = (value: string) => {
+  const handleTabChange = async (value: string) => {
+    console.log({ value });
+    await fetchData();
     setSelectedTab(value as keyof typeof TAB_CONFIG);
     handleHeaderButtonPress(value);
     dispatch(clearMapData());
   };
 
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      pos => {
+        dispatch(
+          setVendorLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          }),
+        );
+      },
+      error => Alert.alert('Location Error', JSON.stringify(error)),
+      { enableHighAccuracy: true },
+    );
+  }, [isFocus, vendorid]);
   return (
     <DashboardContext.Provider
       value={{

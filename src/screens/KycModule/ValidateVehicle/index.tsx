@@ -255,9 +255,11 @@ const ValidateVehicle = () => {
                 item={item}
                 validatingId={validatingId}
                 handleValidate={handleValidate}
-                validationStatus={getVehicleValidationStatus(
-                  item.VehicleNumber,
-                )}
+                validationStatus={
+                  item?.verify_flag === 'Y'
+                    ? { status: 'success', vehicleNumber: item?.VehicleNumber }
+                    : getVehicleValidationStatus(item.VehicleNumber)
+                }
               />
             )}
             contentContainerStyle={styles.listContent}
