@@ -27,6 +27,7 @@ interface FormikDropdownProps {
   searchPlaceholder?: string;
   emptyMessage?: string;
   disabled?: boolean;
+  onSelect?: (value: string | string[]) => void;
 }
 
 const FormikDropdown: React.FC<FormikDropdownProps> = ({
@@ -38,6 +39,7 @@ const FormikDropdown: React.FC<FormikDropdownProps> = ({
   searchPlaceholder = 'Search...',
   emptyMessage = 'No options found',
   disabled = false,
+  onSelect,
 }) => {
   const [field, meta, helpers] = useField(name);
   const [visible, setVisible] = useState(false);
@@ -69,8 +71,10 @@ const FormikDropdown: React.FC<FormikDropdownProps> = ({
         ? selected.filter(i => i !== val)
         : [...selected, val];
       setSelected(newSelected);
+      onSelect?.(newSelected);
     } else {
       setSelected([val]);
+      onSelect?.(val);
       helpers.setValue(val);
       helpers.setTouched(true);
       closeModal();

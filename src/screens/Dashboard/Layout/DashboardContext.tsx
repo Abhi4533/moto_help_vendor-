@@ -4,6 +4,7 @@ import {
   getAvailableVehicles,
   getProcessVehicles,
 } from '@api/endpoints/vehicle.api';
+import { useIsFocused } from '@react-navigation/native';
 import { RootState } from '@store/index';
 import {
   clearMapData,
@@ -33,15 +34,21 @@ interface DashboardContextProps {
   completeModalVisible: boolean;
   setCompleteModalVisible: (visible: boolean) => void;
   setSelectedTab: (tab: keyof typeof TAB_CONFIG) => void;
+  activeData: any[];
+  avilableData: any[];
+  processData: any[];
 }
 
-const DashboardContext = createContext<DashboardContextProps | null>(null);
+export const DashboardContext = createContext<DashboardContextProps | null>(
+  null,
+);
 
 export const DashboardProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
+  const isFocus = useIsFocused();
   const [idleModalVisible, setIdleModalVisible] = useState(false);
   const [processModalVisible, setProcessModalVisible] = useState(false);
   const [activeModalVisible, setActiveModalVisible] = useState(false);
@@ -72,7 +79,7 @@ export const DashboardProvider = ({
     };
 
     fetchData();
-  }, []);
+  }, [isFocus, vendorid]);
 
   const handleHeaderButtonPress = (sel?: any) => {
     dispatch(clearMapData());
@@ -161,6 +168,9 @@ export const DashboardProvider = ({
         completeModalVisible,
         setCompleteModalVisible,
         setSelectedTab,
+        activeData: allData?.[1]?.data || [],
+        avilableData: allData?.[0]?.data || [],
+        processData: allData?.[2]?.data || [],
       }}
     >
       {children}

@@ -6,7 +6,8 @@ export const avialbleVehicle = async (payload: any): Promise<any> => {
 };
 
 export const getDriverInfoByMobile = async (payload: {
-  MobileNo: String;
+  MobileNo?: String;
+  vendorid?: String;
 }): Promise<any> => {
   const response = await apiClient.post('/driver_location_by_mobile', payload);
   return response.data;

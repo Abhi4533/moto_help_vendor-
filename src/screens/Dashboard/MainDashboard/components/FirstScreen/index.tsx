@@ -5,39 +5,13 @@ import Geolocation from '@react-native-community/geolocation';
 import { useNavigation } from '@react-navigation/native';
 import { RootState } from '@store/index';
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Alert,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Button, Card, Icon, Text } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { quickActions } from './helper';
-
-const { width, height } = Dimensions.get('window');
-
-interface CustomerPost {
-  Customer_LoadPostID: string;
-  Origin_Lat: number;
-  Origin_Lng: number;
-}
-
-interface VendorLocation {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-}
-
-const DEFAULT_INDIA_REGION = {
-  latitude: 20.5937,
-  longitude: 78.9629,
-  latitudeDelta: 15,
-  longitudeDelta: 15,
-};
+import { styles } from './style';
+import { CustomerPost, DEFAULT_INDIA_REGION, VendorLocation } from './types';
 
 const FirstScreen = () => {
   const vendorId = useSelector((state: RootState) => state?.auth?.token);
@@ -52,23 +26,17 @@ const FirstScreen = () => {
   /* ---------- FIT FUNCTION ---------- */
   const fitToAllMarkers = () => {
     if (!mapRef.current || !vendorLocation) return;
-
     const coords: any[] = [];
-
-    // Vendor location
     coords.push({
       latitude: vendorLocation.latitude,
       longitude: vendorLocation.longitude,
     });
-
-    // Customers
     customerPosts.forEach(post => {
       coords.push({
         latitude: post.Origin_Lat,
         longitude: post.Origin_Lng,
       });
     });
-
     mapRef.current.fitToCoordinates(coords, {
       edgePadding: { top: 80, right: 80, bottom: 80, left: 80 },
       animated: true,
@@ -84,13 +52,10 @@ const FirstScreen = () => {
         vendorLat: vendorLocation.latitude,
         vendorLng: vendorLocation.longitude,
       });
-
       if (resp?.status === '00' && Array.isArray(resp.data)) {
         setCustomerPosts(resp.data);
       }
-    } catch (error) {
-      console.log('Fetch error: ', error);
-    }
+    } catch (error) {}
   };
 
   /* ---------- Load vendor location ---------- */
@@ -230,63 +195,5 @@ const FirstScreen = () => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  scrollView: { flex: 1, backgroundColor: '#f5f5f5' },
-
-  topButtonsContainer: {
-    flexDirection: 'row',
-    padding: 16,
-    marginTop: 8,
-    gap: 12,
-  },
-  topButton: {
-    flex: 1,
-    backgroundColor: '#6366F1',
-    borderRadius: 12,
-  },
-  availableButton: { backgroundColor: '#10B981' },
-  topButtonLabel: { fontSize: 13, fontWeight: '600' },
-
-  sectionCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 16,
-    elevation: 2,
-  },
-
-  map: { height: height * 0.45, width: '100%' },
-
-  quickActionsContainer: { gap: 12 },
-
-  quickActionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  quickActionItem: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 4,
-    borderRadius: 12,
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  quickActionIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 25,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  quickActionText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#1e293b',
-  },
-});
 
 export default FirstScreen;

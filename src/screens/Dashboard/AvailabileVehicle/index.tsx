@@ -7,7 +7,8 @@ import {
   useGetStateQuery,
   useGetTalukaQuery,
 } from '@api/hooks_api';
-import Dropdown, { Item } from '@components/common/Dropdown';
+import { Item } from '@components/common/Dropdown';
+import FormikDropdown from '@components/common/FormikDropdown';
 import { useNavigation } from '@react-navigation/native';
 import { RootState } from '@store/index';
 import { Formik } from 'formik';
@@ -20,11 +21,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Appbar, Avatar, Badge, Surface, Text } from 'react-native-paper';
+import { Appbar, Avatar, Badge, Icon, Surface, Text } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 import { useSelector } from 'react-redux';
 import { VEHICLE_STATUS_OPTIONS } from './helper';
-import { FormValues, RouteType } from './type';
+import { RouteType } from './type';
 
 interface Errors {
   reportingTime: string;
@@ -49,23 +50,34 @@ const AvailabileVehicle = () => {
     state: '',
     vehicleStatus: '',
   });
+
   const { data: regions } = useGetDistrictQuery({ state: state });
   const [open, setOpen] = useState(false);
+
+  // Fixed: Added dependency check to prevent unnecessary re-renders
+  const excludedDistricts = useMemo(
+    () => routes.flatMap(route => route.districts),
+    [routes],
+  );
+
   const { data: districts } = useGetTalukaQuery({
     state: state,
     region: region,
-    excludeDistricts: useMemo(
-      () => routes.flatMap(route => route.districts),
-      [routes],
-    ),
+    excludeDistricts: excludedDistricts,
   });
+
   const fetchDriver = async () => {
     try {
-      const response = await getDriverInfoByMobile({ MobileNo: '' });
+      const response = await getDriverInfoByMobile({
+        MobileNo: '',
+        vendorid: vendorid || '',
+      });
       if (response?.status === '00') {
         setDriverData(response?.data || []);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('Error fetching driver:', error);
+    }
   };
 
   useEffect(() => {
@@ -96,20 +108,34 @@ const AvailabileVehicle = () => {
       const response = await avialbleVehicle(payload);
 
       if (response?.status === '00') {
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Vehicle availability posted successfully',
+        });
         setTimeout(() => {
           navigation.goBack();
         }, 1500);
       } else {
         Toast.show({
           type: 'error',
-          text1: response?.message || 'Submission failed',
+          text1: 'Submission Failed',
+          text2: response?.message || 'Something went wrong',
         });
       }
-    } catch (error: any) {}
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.message || 'Failed to submit form',
+      });
+    }
   };
+
   const removeRoute = useCallback((index: number) => {
     setRoutes(prev => prev.filter((_, i) => i !== index));
   }, []);
+
   const renderRouteItem = useCallback(
     ({ item, index }: { item: RouteType; index: number }) => (
       <RouteCard
@@ -124,7 +150,7 @@ const AvailabileVehicle = () => {
 
   const driverOptions: Item[] = useMemo(
     () =>
-      driverData?.data?.map((driver: any, index: number) => ({
+      driverData?.map((driver: any, index: number) => ({
         value: driver.MobileNo,
         label: `${driver.full_name} (${driver.DriverID})`,
       })) || [],
@@ -154,9 +180,10 @@ const AvailabileVehicle = () => {
       </Surface>
     );
   };
+
   const renderVehicleStatusOptions = (
     setFieldValue: (field: string, value: any) => void,
-    values: FormValues,
+    values: any,
   ) => {
     return (
       <ScrollView
@@ -179,7 +206,9 @@ const AvailabileVehicle = () => {
             ]}
             onPress={() => setFieldValue('vehicleStatus', status.value)}
           >
-            <Text style={styles.statusIcon}>{status.icon}</Text>
+            <Text style={styles.statusIcon}>
+              <Icon source={status?.icon} size={24} />
+            </Text>
             <Text
               style={[
                 styles.statusButtonText,
@@ -206,6 +235,7 @@ const AvailabileVehicle = () => {
       setState('');
     }
   }, [driverData]);
+
   const addRoute = useCallback(() => {
     const currentState =
       driverData?.data?.[0]?.VehicleType === 'Mini'
@@ -213,6 +243,11 @@ const AvailabileVehicle = () => {
         : state;
 
     if (!currentState || !region || selectedDistricts.length === 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Incomplete Route',
+        text2: 'Please select state, region, and at least one district',
+      });
       return;
     }
 
@@ -229,179 +264,33 @@ const AvailabileVehicle = () => {
     setRoutes(prev => [newRoute, ...prev]);
     resetRouteSelection();
   }, [state, region, selectedDistricts, driverData, resetRouteSelection]);
-  const renderHeader = useCallback(
-    (
-      values: any,
-      setFieldValue: (field: string, value: any) => void,
-      driverInfo: any[],
-    ) => (
-      <View style={styles.headerContainer}>
-        {/* Vehicle Information */}
-        <View style={styles.vehicleInfoCard}>
-          <Text style={styles.sectionTitle}>Vehicle Information</Text>
-          <View style={styles.infoGrid}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Vehicle Number</Text>
-              <Text style={styles.infoValue}>
-                {values.vehicleNumber || 'N/A'}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Vehicle Type</Text>
-              <Text style={styles.infoValue}>
-                {values.vehicleType || 'N/A'}
-              </Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Driver Selection */}
-        <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>Select Driver</Text>
-          <Dropdown
-            label="Select Driver"
-            value={values.driverMobile}
-            options={driverOptions}
-            onSelect={(value: any) => setFieldValue('driverMobile', value)}
-            placeholder="Choose a driver"
-          />
-          {renderDriverInfo(driverInfo)}
-        </View>
-
-        {/* Vehicle Status */}
-        <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>Vehicle Status</Text>
-          {renderVehicleStatusOptions(setFieldValue, values)}
-        </View>
-
-        {/* Add Route Form */}
-        <View style={styles.formCard}>
-          <View style={styles.routeHeader}>
-            <Text style={styles.sectionTitle}>Add Destination Route</Text>
-            {routes.length > 0 && (
-              <Badge size={24} style={styles.badge}>
-                {routes.length}
-              </Badge>
-            )}
-          </View>
-
-          {driverInfo?.[0]?.VehicleType !== 'Mini' && (
-            <View style={styles.selectSection}>
-              <Text style={styles.selectLabel}>State</Text>
-              <Dropdown
-                label="Select State"
-                value={state}
-                options={states?.data || []}
-                onChange={(text: any) => {
-                  setState(text);
-                  setRegion('');
-                  setSelectedDistricts([]);
-                }}
-                placeholder="Choose a state"
-                disabled={
-                  !!driverInfo?.[0]?.State &&
-                  driverInfo?.[0]?.VehicleType === 'Mini'
-                }
-              />
-            </View>
-          )}
-
-          <View style={styles.selectSection}>
-            <Text style={styles.selectLabel}>Region</Text>
-            <Dropdown
-              label="Select Region"
-              value={region}
-              options={regions?.data || []}
-              onSelect={setRegion}
-              placeholder="Choose a region"
-              disabled={!state && !driverInfo?.[0]?.State}
-            />
-          </View>
-
-          <View style={styles.selectSection}>
-            <Text style={styles.selectLabel}>
-              Districts{' '}
-              {selectedDistricts.length > 0 && `(${selectedDistricts.length})`}
-            </Text>
-            <Dropdown
-              label="Select Districts"
-              value=""
-              options={districts?.data || []}
-              onSelect={() => {}}
-              placeholder="Choose districts"
-              disabled={!region}
-              multiSelect={true}
-              selectedValues={selectedDistricts}
-              onMultiSelect={setSelectedDistricts}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.addRouteButton}
-            onPress={addRoute}
-            disabled={!region || selectedDistricts.length === 0}
-          >
-            <Text style={styles.addRouteButtonIcon}>+</Text>
-            <Text style={styles.addRouteButtonText}>Add Route</Text>
-          </TouchableOpacity>
-        </View>
-
-        {routes.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>
-              Your Routes ({routes.length})
-            </Text>
-            <View style={styles.divider} />
-          </>
-        )}
-      </View>
-    ),
-    [
-      state,
-      region,
-      selectedDistricts,
-      routes.length,
-      driverOptions,
-      states,
-      regions,
-      districts,
-      addRoute,
-    ],
+  // Initial form values
+  const initialValues = useMemo(
+    () => ({
+      driverMobile: '',
+      driverID: '',
+      vendorid: vendorid,
+      origin: {
+        address: '',
+        coordinates: { lat: 0, lng: 0 },
+        components: {
+          place: '',
+          dist: '',
+          tal: '',
+          state: '',
+          pincode: '',
+        },
+      },
+      routes: [],
+      vehicleType: '',
+      vehicleNumber: '',
+      reportingTime: '',
+      vehicleStatus: '',
+    }),
+    [vendorid],
   );
 
-  const renderFooter = useCallback(
-    (handleSubmit: () => void) => (
-      <View style={styles.footerContainer}>
-        {routes.length > 0 && (
-          <>
-            <Text style={styles.label}>Reporting Time *</Text>
-            <TouchableOpacity
-              style={styles.timeInput}
-              onPress={() => setOpen(true)}
-            >
-              <Text
-                style={[
-                  styles.timeInputText,
-                  !reportingTime && styles.placeholderText,
-                ]}
-              >
-                {reportingTime || 'Select Reporting Time'}
-              </Text>
-              <Text style={styles.timeInputIcon}>🕒</Text>
-            </TouchableOpacity>
-          </>
-        )}
-        <TouchableOpacity
-          style={[styles.submitButton]}
-          onPress={handleSubmit}
-          disabled={routes.length === 0}
-        >
-          <Text style={styles.submitButtonText}>Post Vehicle Availability</Text>
-        </TouchableOpacity>
-      </View>
-    ),
-    [routes.length, reportingTime],
-  );
   return (
     <View style={styles.container}>
       <Appbar.Header
@@ -419,47 +308,17 @@ const AvailabileVehicle = () => {
           }}
         />
       </Appbar.Header>
-      <Formik
-        initialValues={{
-          driverMobile: '',
-          driverID: '',
-          vendorid: vendorid,
-          origin: {
-            address: '',
-            coordinates: { lat: 0, lng: 0 },
-            components: {
-              place: '',
-              dist: '',
-              tal: '',
-              state: '',
-              pincode: '',
-            },
-          },
-          routes: [],
-          vehicleType: '',
-          vehicleNumber: '',
-          reportingTime: '',
-          vehicleStatus: '',
-        }}
-        onSubmit={handleFormSubmit}
-      >
-        {({
-          handleChange,
-          handleBlur,
-          setFieldValue,
-          values,
-          errors,
-          touched,
-          handleSubmit,
-        }) => {
+      <Formik initialValues={initialValues} onSubmit={handleFormSubmit}>
+        {({ setFieldValue, values, handleSubmit }) => {
           const driverInfo = useMemo(
             () =>
-              driverData?.data?.filter(
+              driverData?.filter(
                 (item: any) => item?.MobileNo === values?.driverMobile,
               ) || [],
             [driverData, values.driverMobile],
           );
 
+          // FIXED: Moved setFieldValue to useEffect to prevent infinite re-renders
           useEffect(() => {
             if (driverInfo?.[0]) {
               const driver = driverInfo[0];
@@ -483,36 +342,167 @@ const AvailabileVehicle = () => {
               setFieldValue('vehicleType', driver?.VehicleType || '');
             }
           }, [driverInfo, setFieldValue, vendorid]);
-
           return (
             <View style={styles.modalBody}>
-              <FlatList
-                data={routes}
-                renderItem={renderRouteItem}
-                keyExtractor={item => `route-${item.timestamp}`}
-                ListHeaderComponent={renderHeader(
-                  values,
-                  setFieldValue,
-                  driverInfo,
-                )}
-                ListFooterComponent={() => renderFooter(handleSubmit)}
-                contentContainerStyle={styles.listContent}
+              <ScrollView
+                style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}
-              />
+                contentContainerStyle={{ paddingBottom: 20 }}
+                keyboardShouldPersistTaps="handled"
+              >
+                <View style={styles.headerContainer}>
+                  {/* Driver Selection */}
+                  <View style={styles.formCard}>
+                    <FormikDropdown
+                      name="driverMobile"
+                      label="Select Driver"
+                      data={driverOptions || []}
+                      placeholder="Choose a driver"
+                    />
+                    {driverInfo.length > 0 && renderDriverInfo(driverInfo)}
+                  </View>
+
+                  {/* Vehicle Status */}
+                  <View style={styles.formCard}>
+                    <Text style={styles.sectionTitle}>Vehicle Status</Text>
+                    {renderVehicleStatusOptions(setFieldValue, values)}
+                  </View>
+
+                  {/* Add Route Form */}
+                  <View style={styles.formCard}>
+                    <View style={styles.routeHeader}>
+                      <Text style={styles.sectionTitle}>
+                        Add Destination Route
+                      </Text>
+                      {routes.length > 0 && (
+                        <Badge size={24} style={styles.badge}>
+                          {routes.length}
+                        </Badge>
+                      )}
+                    </View>
+
+                    {driverInfo?.[0]?.VehicleType !== 'Mini' && (
+                      <View style={styles.selectSection}>
+                        <FormikDropdown
+                          name="state"
+                          label="Select State"
+                          data={states?.data || []}
+                          onSelect={(text: any) => setState(text)}
+                          placeholder="Choose a state"
+                        />
+                      </View>
+                    )}
+
+                    <View style={styles.selectSection}>
+                      <FormikDropdown
+                        name="region"
+                        label="Select Region"
+                        data={regions?.data || []}
+                        onSelect={setRegion as any}
+                        placeholder="Choose a region"
+                        disabled={
+                          !state && driverInfo?.[0]?.VehicleType !== 'Mini'
+                        }
+                      />
+                    </View>
+
+                    <View style={styles.selectSection}>
+                      <FormikDropdown
+                        name="dist"
+                        label="Select Districts"
+                        data={districts?.data || []}
+                        onSelect={setSelectedDistricts as any}
+                        placeholder="Choose districts"
+                        multi={true}
+                        disabled={!region}
+                      />
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.addRouteButton,
+                        (!region || selectedDistricts.length === 0) &&
+                          styles.addRouteButtonDisabled,
+                      ]}
+                      onPress={addRoute}
+                      disabled={!region || selectedDistricts.length === 0}
+                    >
+                      <Text style={styles.addRouteButtonIcon}>+</Text>
+                      <Text style={styles.addRouteButtonText}>Add Route</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {routes.length > 0 && (
+                    <>
+                      <Text style={styles.sectionTitle}>
+                        Your Routes ({routes.length})
+                      </Text>
+                      <View style={styles.divider} />
+                    </>
+                  )}
+                </View>
+
+                <FlatList
+                  data={routes}
+                  renderItem={renderRouteItem}
+                  keyExtractor={item => `route-${item.timestamp}`}
+                  contentContainerStyle={styles.listContent}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={false}
+                />
+
+                <View style={styles.footerContainer}>
+                  {routes.length > 0 && (
+                    <>
+                      <Text style={styles.label}>Reporting Time *</Text>
+                      <TouchableOpacity
+                        style={styles.timeInput}
+                        onPress={() => setOpen(true)}
+                      >
+                        <Text
+                          style={[
+                            styles.timeInputText,
+                            !reportingTime && styles.placeholderText,
+                          ]}
+                        >
+                          {reportingTime || 'Select Reporting Time'}
+                        </Text>
+                        <Text style={styles.timeInputIcon}>🕒</Text>
+                      </TouchableOpacity>
+                      {errors.reportingTime ? (
+                        <Text style={styles.errorText}>
+                          {errors.reportingTime}
+                        </Text>
+                      ) : null}
+                    </>
+                  )}
+                  <TouchableOpacity
+                    style={[
+                      styles.submitButton,
+                      routes.length === 0 && styles.submitButtonDisabled,
+                    ]}
+                    onPress={() => handleSubmit()}
+                    disabled={routes.length === 0}
+                  >
+                    <Text style={styles.submitButtonText}>
+                      Post Vehicle Availability
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePickerModal
+                  open={open}
+                  setOpen={setOpen}
+                  date={date}
+                  setDate={setDate}
+                  setReportingTime={setReportingTime}
+                  errors={errors}
+                  setErrors={setErrors}
+                />
+              </ScrollView>
             </View>
           );
         }}
       </Formik>
-
-      <DateTimePickerModal
-        open={open}
-        setOpen={setOpen}
-        date={date}
-        setDate={setDate}
-        setReportingTime={setReportingTime}
-        errors={errors}
-        setErrors={setErrors}
-      />
 
       <Toast />
     </View>
@@ -521,7 +511,80 @@ const AvailabileVehicle = () => {
 
 export default AvailabileVehicle;
 
-// Memoized DateTime Picker Component
+const RouteCard = memo(
+  ({
+    route,
+    index,
+    origin,
+    onRemove,
+  }: {
+    route: RouteType;
+    index: number;
+    origin: any;
+    onRemove: (index: number) => void;
+  }) => {
+    return (
+      <View style={styles.routeCard}>
+        <View style={styles.routeHeader}>
+          <View style={styles.routeIndex}>
+            <Text style={styles.routeIndexText}>{index + 1}</Text>
+          </View>
+          <Text style={styles.routeTitle}>Route {index + 1}</Text>
+          <TouchableOpacity
+            onPress={() => onRemove(index)}
+            style={styles.removeButton}
+          >
+            <Text style={styles.removeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Route Visualization */}
+        <View style={styles.routeVisualization}>
+          {/* Origin */}
+          <View style={styles.routePoint}>
+            <View style={[styles.pointIcon, styles.originIcon]}>
+              <Text style={styles.pointIconText}>📍</Text>
+            </View>
+            <View style={styles.pointContent}>
+              <Text style={styles.pointLabel}>Origin</Text>
+              <Text style={styles.pointAddress} numberOfLines={2}>
+                {origin?.address || 'Not specified'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Arrow Connector */}
+          <View style={styles.arrowConnector}>
+            <View style={styles.verticalLine} />
+            <View style={styles.arrowDown}>
+              <Text style={styles.arrowIcon}>↓</Text>
+            </View>
+            <View style={styles.verticalLine} />
+          </View>
+
+          {/* Destination */}
+          <View style={styles.routePoint}>
+            <View style={[styles.pointIcon, styles.destinationIcon]}>
+              <Text style={styles.pointIconText}>🏁</Text>
+            </View>
+            <View style={styles.pointContent}>
+              <Text style={styles.pointLabel}>Destination</Text>
+              <View style={styles.destinationDetails}>
+                <Text style={styles.destinationText}>
+                  <Text style={styles.destinationHighlight}>{route.state}</Text>
+                  {route.region && ` → ${route.region}`}
+                  {route.districts.length > 0 &&
+                    ` → ${route.districts.join(', ')}`}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  },
+);
+
 const DateTimePickerModal = memo(
   ({
     open,
@@ -553,18 +616,13 @@ const DateTimePickerModal = memo(
         hour12: true,
       });
       setReportingTime(formatted);
-      if (errors.reportingTime) {
-        // setErrors(prev => ({ ...prev, reportingTime: '' }));
-      }
+
       setOpen(false);
-    }, [
-      tempDate,
-      setDate,
-      setReportingTime,
-      errors.reportingTime,
-      setErrors,
-      setOpen,
-    ]);
+    }, [tempDate, setDate, setReportingTime, setErrors, setOpen]);
+
+    const handleCancel = useCallback(() => {
+      setOpen(false);
+    }, [setOpen]);
 
     const timeOptions = useMemo(
       () =>
@@ -582,7 +640,7 @@ const DateTimePickerModal = memo(
           <View style={styles.datePickerContainer}>
             <View style={styles.datePickerHeader}>
               <Text style={styles.datePickerTitle}>Select Reporting Time</Text>
-              <TouchableOpacity onPress={() => setOpen(false)}>
+              <TouchableOpacity onPress={handleCancel}>
                 <Text style={styles.closeButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -685,79 +743,6 @@ const DateTimePickerModal = memo(
   },
 );
 
-const RouteCard = memo(
-  ({
-    route,
-    index,
-    origin,
-    onRemove,
-  }: {
-    route: RouteType;
-    index: number;
-    origin: any;
-    onRemove: (index: number) => void;
-  }) => {
-    return (
-      <View style={styles.routeCard}>
-        <View style={styles.routeHeader}>
-          <View style={styles.routeIndex}>
-            <Text style={styles.routeIndexText}>{index + 1}</Text>
-          </View>
-          <Text style={styles.routeTitle}>Route {index + 1}</Text>
-          <TouchableOpacity
-            onPress={() => onRemove(index)}
-            style={styles.removeButton}
-          >
-            <Text style={styles.removeButtonText}>✕</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Route Visualization */}
-        <View style={styles.routeVisualization}>
-          {/* Origin */}
-          <View style={styles.routePoint}>
-            <View style={[styles.pointIcon, styles.originIcon]}>
-              <Text style={styles.pointIconText}>📍</Text>
-            </View>
-            <View style={styles.pointContent}>
-              <Text style={styles.pointLabel}>Origin</Text>
-              <Text style={styles.pointAddress} numberOfLines={2}>
-                {origin?.address || 'Loading...'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Arrow Connector */}
-          <View style={styles.arrowConnector}>
-            <View style={styles.verticalLine} />
-            <View style={styles.arrowDown}>
-              <Text style={styles.arrowIcon}>↓</Text>
-            </View>
-            <View style={styles.verticalLine} />
-          </View>
-
-          {/* Destination */}
-          <View style={styles.routePoint}>
-            <View style={[styles.pointIcon, styles.destinationIcon]}>
-              <Text style={styles.pointIconText}>🏁</Text>
-            </View>
-            <View style={styles.pointContent}>
-              <Text style={styles.pointLabel}>Destination</Text>
-              <View style={styles.destinationDetails}>
-                <Text style={styles.destinationText}>
-                  <Text style={styles.destinationHighlight}>{route.state}</Text>
-                  {route.region && ` → ${route.region}`}
-                  {route.districts.length > 0 &&
-                    ` → ${route.districts.join(', ')}`}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
-    );
-  },
-);
 // Updated Professional Styles with Route Visualization
 const styles = StyleSheet.create({
   container: {
@@ -837,7 +822,7 @@ const styles = StyleSheet.create({
   statusButton: {
     flexDirection: 'row',
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 5,
     borderRadius: 8,
     borderWidth: 1,
     marginRight: 12,
@@ -861,6 +846,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
+  },
+  addRouteButtonDisabled: {
+    backgroundColor: '#9CA3AF',
   },
   addRouteButtonIcon: {
     color: 'white',

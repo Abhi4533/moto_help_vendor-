@@ -1,3 +1,4 @@
+import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
 import {
   clearMapData,
   setDriverAndCustomerLocations,
@@ -22,14 +23,6 @@ import {
 } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 
-interface IdleDriversModalProps {
-  visible: boolean;
-  onDismiss: () => void;
-  rawData: any[];
-  // onDriverSelect: (driver: RawDriverData) => void;
-  // selectedDriver: RawDriverData | null;
-}
-
 // Safe number formatting utility
 const safeToFixed = (
   value: number | undefined | null,
@@ -41,11 +34,13 @@ const safeToFixed = (
   return value.toFixed(decimals);
 };
 
-const IdleDriversModal: React.FC<IdleDriversModalProps> = ({
-  visible,
-  onDismiss,
-  rawData,
-}) => {
+const IdleDriversModal = () => {
+  const {
+    idleModalVisible: visible,
+    setIdleModalVisible: onDismiss,
+    avilableData: rawData,
+  } = useDashboard();
+
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState('');
   const theme = useTheme();
@@ -86,17 +81,17 @@ const IdleDriversModal: React.FC<IdleDriversModalProps> = ({
         latitude: load.pickup_Latitude || 0,
         longitude: load.pickup_Longitude || 0,
       }));
-
+    console.log({ loadsData });
     dispatch(
       setDriverAndCustomerLocations({
         driver: {
           latitude: driver?.Driver_Latitude || 0,
           longitude: driver?.Driver_Longitude || 0,
         },
-        customers: loadsData.map((load: any) => load.coordinate),
+        customers: loadsData,
       }),
     );
-    onDismiss();
+    onDismiss(false);
   };
 
   const renderDriverItem = ({
@@ -176,11 +171,11 @@ const IdleDriversModal: React.FC<IdleDriversModalProps> = ({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onDismiss={onDismiss}
+      onDismiss={() => onDismiss(false)}
     >
       <View style={styles.modalContainer}>
         <Appbar.Header>
-          <Appbar.BackAction onPress={onDismiss} />
+          <Appbar.BackAction onPress={() => onDismiss(false)} />
           <Appbar.Content
             title="Available Drivers"
             subtitle={`${filteredData.length} driver${

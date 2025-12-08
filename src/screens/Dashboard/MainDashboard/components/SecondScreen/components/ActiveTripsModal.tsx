@@ -1,3 +1,4 @@
+import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
 import {
   clearMapData,
   setDriverPickupAndDestinationLocations,
@@ -22,17 +23,12 @@ import {
 } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 
-interface ActiveTripsModalProps {
-  visible: boolean;
-  onDismiss: () => void;
-  rawData: any[];
-}
-
-const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
-  visible,
-  onDismiss,
-  rawData,
-}) => {
+const ActiveTripsModal = () => {
+  const {
+    activeModalVisible: visible,
+    setActiveModalVisible: onDismiss,
+    activeData: rawData,
+  } = useDashboard();
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState('');
   const theme = useTheme();
@@ -76,7 +72,7 @@ const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
         },
       }),
     );
-    onDismiss();
+    onDismiss(false);
   };
 
   const renderDriverItem = ({ item }: { item: any }) => (
@@ -247,11 +243,11 @@ const ActiveTripsModal: React.FC<ActiveTripsModalProps> = ({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onDismiss={onDismiss}
+      onDismiss={() => onDismiss(false)}
     >
       <View style={styles.modalContainer}>
         <Appbar.Header>
-          <Appbar.BackAction onPress={onDismiss} />
+          <Appbar.BackAction onPress={() => onDismiss(false)} />
           <Appbar.Content
             title="Active Trips"
             subtitle={`${filteredData.length} active trip${

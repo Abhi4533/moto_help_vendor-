@@ -236,7 +236,6 @@ const Step3Form: React.FC = () => {
                   onChangeText={handleGSTChange}
                   style={styles.flexInput}
                   activeOutlineColor={COLORS.primary}
-                  editable={!isIndividual}
                   error={(errors?.kycDetails as any)?.gstNo}
                 />
               </View>

@@ -87,6 +87,21 @@ export const api = createApi({
         method: 'POST',
         body,
       }),
+      transformResponse: (response: {
+        status: string;
+        message: string;
+        data: DistrictData[];
+      }) => {
+        return {
+          ...response,
+          data: response.data
+            .filter(item => item?.district && item?.district !== 'NA') // optional: remove invalid entries
+            .map(item => ({
+              label: item?.district?.trim(),
+              value: item?.district?.trim(), // or use a code if you have one later
+            })),
+        };
+      },
     }),
     verifyGST: builder.mutation<
       GSTVerificationResponse,

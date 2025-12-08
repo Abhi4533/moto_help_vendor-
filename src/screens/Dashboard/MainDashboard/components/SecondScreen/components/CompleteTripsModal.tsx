@@ -1,3 +1,4 @@
+import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -17,21 +18,14 @@ import {
   useTheme,
 } from 'react-native-paper';
 
-interface CompleteTripsModalProps {
-  visible: boolean;
-  onDismiss: () => void;
-  rawData: any[];
-}
-
-const CompleteTripsModal: React.FC<CompleteTripsModalProps> = ({
-  visible,
-  onDismiss,
-  rawData,
-}) => {
+const CompleteTripsModal = () => {
+  let rawData: any = [];
+  const { setCompleteModalVisible: onDismiss, completeModalVisible: visible } =
+    useDashboard();
   const [searchQuery, setSearchQuery] = useState('');
   const theme = useTheme();
 
-  const filteredData = rawData?.filter(driver => {
+  const filteredData = rawData?.filter((driver: any) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -42,16 +36,13 @@ const CompleteTripsModal: React.FC<CompleteTripsModalProps> = ({
   });
 
   const handleDriverPress = () => {
-    onDismiss();
+    onDismiss(false);
   };
 
   const renderDriverItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       onPress={() => handleDriverPress()}
-      style={[
-        styles.driverItem,
-        // selectedTrip?.id === item.id && styles.selectedDriverItem,
-      ]}
+      style={[styles.driverItem]}
     >
       <Card style={styles.driverCard}>
         <Card.Content>
@@ -178,14 +169,16 @@ const CompleteTripsModal: React.FC<CompleteTripsModalProps> = ({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onDismiss={onDismiss}
+      onDismiss={() => onDismiss(false)}
     >
       <View style={styles.modalContainer}>
         <Appbar.Header>
-          <Appbar.BackAction onPress={onDismiss} />
+          <Appbar.BackAction onPress={() => onDismiss(false)} />
           <Appbar.Content
             title="Completed Trips"
-            subtitle={`${filteredData.length} trip${filteredData.length !== 1 ? 's' : ''} completed`}
+            subtitle={`${filteredData.length} trip${
+              filteredData.length !== 1 ? 's' : ''
+            } completed`}
           />
           <Badge
             size={24}

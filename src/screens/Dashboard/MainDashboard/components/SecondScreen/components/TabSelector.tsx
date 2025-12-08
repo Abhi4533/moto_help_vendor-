@@ -1,17 +1,10 @@
-import React, { FC } from 'react';
-import { View } from 'react-native';
+import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import { SegmentedButtons } from 'react-native-paper';
-import { styles } from '../styles';
 
-interface TabSelectorProps {
-  selectedTab: string;
-  handleTabChange: (value: string) => void;
-}
-
-const TabSelector: FC<TabSelectorProps> = ({
-  handleTabChange,
-  selectedTab,
-}) => {
+const TabSelector = () => {
+  const { selectedTab, handleTabChange } = useDashboard();
   return (
     <View style={styles.tabSelector}>
       <SegmentedButtons
@@ -59,3 +52,12 @@ const TabSelector: FC<TabSelectorProps> = ({
 };
 
 export default TabSelector;
+
+const styles = StyleSheet.create({
+  tabSelector: {
+    padding: 16,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+});

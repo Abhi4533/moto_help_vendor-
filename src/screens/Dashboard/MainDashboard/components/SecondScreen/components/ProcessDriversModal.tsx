@@ -1,3 +1,4 @@
+import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
 import {
   clearMapData,
   setDriverAndPickupLocations,
@@ -22,17 +23,13 @@ import {
 } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 
-interface ProcessDriversModalProps {
-  visible: boolean;
-  onDismiss: () => void;
-  rawData: any[];
-}
+const ProcessDriversModal = () => {
+  const {
+    setProcessModalVisible: onDismiss,
+    processModalVisible: visible,
+    processData: rawData,
+  } = useDashboard();
 
-const ProcessDriversModal: React.FC<ProcessDriversModalProps> = ({
-  visible,
-  onDismiss,
-  rawData,
-}) => {
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState('');
   const theme = useTheme();
@@ -64,18 +61,13 @@ const ProcessDriversModal: React.FC<ProcessDriversModalProps> = ({
         },
       }),
     );
-
-    onDismiss();
+    onDismiss(false);
   };
 
   const renderDriverItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       onPress={() => handleDriverPress(item)}
-      style={[
-        styles.driverItem,
-        // selectedDriver?.driver_id === item.driver_id &&
-        //   styles.selectedDriverItem,
-      ]}
+      style={[styles.driverItem]}
     >
       <Card style={styles.driverCard}>
         <Card.Content>
@@ -157,11 +149,11 @@ const ProcessDriversModal: React.FC<ProcessDriversModalProps> = ({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onDismiss={onDismiss}
+      onDismiss={() => onDismiss(false)}
     >
       <View style={styles.modalContainer}>
         <Appbar.Header>
-          <Appbar.BackAction onPress={onDismiss} />
+          <Appbar.BackAction onPress={() => onDismiss(false)} />
           <Appbar.Content
             title="Drivers in Process"
             subtitle={`${filteredData.length} driver${
@@ -322,76 +314,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#666',
   },
-  progressIndicator: {
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: 60,
-    height: 6,
-    backgroundColor: '#FFE0B2',
-    borderRadius: 3,
-    marginBottom: 4,
-  },
-  progressFill: {
-    width: '50%',
-    height: 6,
-    backgroundColor: '#FF9800',
-    borderRadius: 3,
-  },
-  progressText: {
-    color: '#FF9800',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  locationSection: {
-    marginBottom: 16,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  locationItem: {
-    flex: 1,
-    paddingHorizontal: 4,
-  },
-  locationLabel: {
-    color: '#666',
-    marginBottom: 4,
-    fontWeight: '500',
-  },
-  coordinates: {
-    fontSize: 10,
-    color: '#999',
-    fontFamily: 'monospace',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#FFF3E0',
-    borderRadius: 8,
-    padding: 12,
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#1a237e',
-    marginBottom: 2,
-  },
-  statLabel: {
-    color: '#666',
-    fontSize: 10,
-    textAlign: 'center',
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#FFE0B2',
-  },
+
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
