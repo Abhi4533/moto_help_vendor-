@@ -1,117 +1,180 @@
+import React, { useMemo, useState } from 'react';
+import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Button,
+  Card,
+  HelperText,
+  Modal,
+  Portal,
+  Text,
+  TextInput,
+} from 'react-native-paper';
+import { useFormikContext } from 'formik';
+
 import { useGetDesignationListQuery } from '@api/hooks_api';
 import {
   VendorEmployeeDetails,
   VendorRegistrationRequest,
 } from '@api/types/auth.types';
 import Dropdown from '@components/common/Dropdown';
-import EmptyState from '@components/common/EmptyState';
 import Input from '@components/common/Input';
 import Loader from '@components/common/Loader';
-import { useFormikContext } from 'formik';
-import React, { useCallback, useMemo } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { Button, Card, IconButton, Text, TextInput } from 'react-native-paper';
 
-const MIN_AUTHORITIES = 1;
-const OTHER_DESIGNATION = 'Other';
+const EMPTY_AUTHORITY: VendorEmployeeDetails = {
+  full_name: '',
+  designation: '',
+  contact_No: '',
+  alternate_No: '',
+  website: '',
+  username: '',
+  password: '',
+  emailAddress: '',
+};
 
-const Step2Form: React.FC<any> = ({ onSkip }) => {
+const OTHER_DESIGNATION_VALUE = 'Other';
+const OTHER_DESIGNATION_LABEL = 'Other';
+
+interface Step2FormProps {
+  onSkip: () => void;
+}
+
+const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
   const { values, setFieldValue, errors } =
     useFormikContext<VendorRegistrationRequest>();
   const { data: designationList, isLoading } = useGetDesignationListQuery();
 
-  const vendorEmployeeDetails: VendorEmployeeDetails[] = useMemo(
-    () =>
-      Array.isArray(values.VendorEmployeeDetails)
-        ? values.VendorEmployeeDetails
-        : [],
-    [values.VendorEmployeeDetails],
-  );
+  const employeeCount = Number(values?.VendorDetails?.employee_count || 0);
+
+  const designationOptions = useMemo(() => {
+    const baseList = designationList?.data || [];
+    return [
+      ...baseList,
+      { label: OTHER_DESIGNATION_LABEL, value: OTHER_DESIGNATION_VALUE },
+    ];
+  }, [designationList]);
+
+  const vendorEmployeeDetails = useMemo(() => {
+    const list = Array.isArray(values.VendorEmployeeDetails)
+      ? [...values.VendorEmployeeDetails]
+      : [];
+
+    while (list.length < employeeCount) {
+      list.push({ ...EMPTY_AUTHORITY });
+    }
+
+    return list.slice(0, employeeCount);
+  }, [values.VendorEmployeeDetails, employeeCount]);
 
   const currentTotalCount = vendorEmployeeDetails.length;
-  const canAddMore =
-    currentTotalCount < Number(values?.VendorDetails?.employee_count);
+  const maxAllowed = Number(values?.VendorDetails?.employee_count || 0);
+  const isLimitReached = currentTotalCount === maxAllowed;
 
-  const addContact = useCallback(() => {
-    if (!canAddMore) return;
+  const openModal = (index: number) => {
+    setActiveIndex(index);
+    setModalVisible(true);
+  };
 
-    const newContact: VendorEmployeeDetails = {
-      full_name: '',
-      designation:
-        values?.VendorDetails?.companyType === 'CHALAK MALAK'
-          ? 'Authority'
-          : '',
-      contact_No: '',
-      alternate_No: '',
-      website: '',
-      username: '',
-      password: '',
-      emailAddress: '',
-    };
+  const closeModal = () => {
+    setModalVisible(false);
+    setActiveIndex(null);
+  };
 
-    setFieldValue('VendorEmployeeDetails', [
-      ...vendorEmployeeDetails,
-      newContact,
-    ]);
-  }, [
-    vendorEmployeeDetails,
-    setFieldValue,
-    canAddMore,
-    values?.VendorDetails?.companyType,
-  ]);
+  const handleSaveAuthority = () => {
+    closeModal();
+  };
 
-  const removeContact = useCallback(
-    (index: number) => {
-      if (vendorEmployeeDetails.length <= MIN_AUTHORITIES) return;
+  const handleDesignationChange = (text: any) => {
+    if (activeIndex !== null) {
+      setFieldValue(`VendorEmployeeDetails[${activeIndex}].designation`, text);
 
-      const updatedContacts = vendorEmployeeDetails.filter(
-        (_, i) => i !== index,
+      // Clear custom designation if not "Other"
+      if (text !== OTHER_DESIGNATION_VALUE) {
+        setFieldValue(
+          `VendorEmployeeDetails[${activeIndex}].customDesignation`,
+          '',
+        );
+      }
+    }
+  };
+
+  const handleFieldChange = (
+    field: keyof VendorEmployeeDetails | 'customDesignation',
+    text: string,
+  ) => {
+    if (activeIndex !== null) {
+      const transformedText = field === 'full_name' ? text.toUpperCase() : text;
+      setFieldValue(
+        `VendorEmployeeDetails[${activeIndex}].${field}`,
+        transformedText,
       );
-      setFieldValue('VendorEmployeeDetails', updatedContacts);
-    },
-    [vendorEmployeeDetails, setFieldValue],
-  );
+    }
+  };
 
-  const isOtherDesignationSelected = (index: number) =>
-    vendorEmployeeDetails[index]?.designation === OTHER_DESIGNATION;
+  const isOtherDesignationSelected = (index: number) => {
+    return (
+      vendorEmployeeDetails[index]?.designation === OTHER_DESIGNATION_VALUE
+    );
+  };
+
+  const renderAuthorityButton = ({
+    item,
+    index,
+  }: {
+    item: VendorEmployeeDetails;
+    index: number;
+  }) => (
+    <Button
+      mode="outlined"
+      style={styles.authorityBtn}
+      onPress={() => openModal(index)}
+      icon={item.full_name ? 'account-check' : 'account-plus'}
+      contentStyle={styles.leftAlignedButton}
+      labelStyle={styles.buttonLabel}
+    >
+      {item.full_name || `Add Authority ${index + 1}`}
+    </Button>
+  );
 
   return (
     <View style={styles.container}>
-      {/* ⭐ ALWAYS FLOATING SKIP BUTTON */}
-      <View style={styles.floatingSkipContainer}></View>
-
       <Loader visible={isLoading} />
 
       <Card style={styles.summaryCard}>
-        <Card.Content style={styles.summaryContent}>
-          <View style={styles.headerSection}>
-            <View style={styles.headerText}>
-              <Text variant="titleMedium" style={styles.mainTitle}>
-                Operating Authority other Than User
-              </Text>
-            </View>
+        <Card.Content>
+          <View style={styles.headerRow}>
+            <Text variant="titleMedium" style={styles.mainTitle}>
+              Operating Authority Other Than User
+            </Text>
+
+            <Button
+              mode="contained-tonal"
+              compact
+              onPress={onSkip}
+              style={styles.skipBtn}
+              labelStyle={styles.skipLabel}
+              icon="skip-next"
+            >
+              Skip
+            </Button>
           </View>
 
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 5,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 12,
-            }}
-          >
-            <View style={{ flex: 1 }}>
+          <View style={styles.countSection}>
+            <View style={styles.inputContainer}>
               <Input
                 label="Maximum Authorities"
-                value={values?.VendorDetails?.employee_count}
+                value={values?.VendorDetails?.employee_count?.toString()}
                 mode="outlined"
-                style={styles.maxCountInput}
                 keyboardType="number-pad"
                 maxLength={2}
                 left={<TextInput.Icon icon="account-group" />}
                 onChangeText={text =>
-                  setFieldValue('VendorDetails.employee_count', text)
+                  setFieldValue(
+                    'VendorDetails.employee_count',
+                    text.replace(/[^0-9]/g, ''),
+                  )
                 }
                 error={errors?.VendorDetails?.employee_count}
               />
@@ -120,303 +183,219 @@ const Step2Form: React.FC<any> = ({ onSkip }) => {
             <View
               style={[
                 styles.countBadge,
-
-                currentTotalCount ===
-                  Number(values?.VendorDetails?.employee_count) &&
-                  styles.countBadgeFull,
+                isLimitReached && styles.countBadgeFull,
               ]}
             >
               <Text variant="labelLarge" style={styles.countText}>
-                Total User – {currentTotalCount + 1}/
-                {Number(values?.VendorDetails?.employee_count) + 1}
+                {currentTotalCount + 1}/{maxAllowed + 1}
               </Text>
             </View>
-            <Button
-              mode="contained-tonal"
-              compact
-              onPress={() => {
-                onSkip();
-              }}
-              style={styles.floatingSkipBtn}
-              labelStyle={styles.floatingSkipLabel}
-            >
-              Skip
-            </Button>
           </View>
 
-          {canAddMore ? (
-            <Button
-              mode="outlined"
-              onPress={addContact}
-              style={styles.addButton}
-              icon="account-plus"
-              contentStyle={styles.buttonContent}
-            >
-              Add Additional Authority
-            </Button>
-          ) : (
-            <Card style={styles.maxLimitCard}>
-              <Card.Content style={styles.maxLimitContent}>
-                <IconButton icon="alert-circle" iconColor="#ff9800" size={18} />
-                <Text variant="bodySmall" style={styles.maxLimitText}>
-                  Maximum of {values?.VendorDetails?.employee_count} authorities
-                  reached
-                </Text>
-              </Card.Content>
-            </Card>
-          )}
-
-          {errors?.VendorEmployeeDetails &&
-            typeof errors?.VendorEmployeeDetails === 'string' && (
-              <Card style={styles.maxLimitCard}>
-                <Card.Content style={styles.maxLimitContent}>
-                  <IconButton icon="close" iconColor="#ff9800" size={18} />
-                  <Text variant="bodySmall" style={styles.maxLimitText}>
-                    {errors?.VendorEmployeeDetails}
-                  </Text>
-                </Card.Content>
-              </Card>
-            )}
+          <HelperText type="info" style={styles.helperText}>
+            If you wish to authorize/allow others to operate this app on their
+            mobile with same credentials
+          </HelperText>
         </Card.Content>
       </Card>
 
       <FlatList
-        keyboardShouldPersistTaps="always"
         data={vendorEmployeeDetails}
-        renderItem={({ item, index }) => (
-          <Card style={styles.contactCard}>
-            <Card.Content>
-              <View style={styles.cardHeader}>
-                <Text variant="titleSmall" style={styles.contactNumberText}>
-                  Authority #{index + 1}
-                </Text>
+        keyExtractor={(_, i) => `authority-${i}`}
+        renderItem={renderAuthorityButton}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+      />
 
-                {index >= MIN_AUTHORITIES && (
-                  <IconButton
-                    icon="close-circle"
-                    size={20}
-                    iconColor="#d32f2f"
-                    onPress={() => removeContact(index)}
-                    style={styles.removeButton}
-                  />
-                )}
-              </View>
+      <Portal>
+        <Modal
+          visible={modalVisible}
+          onDismiss={closeModal}
+          contentContainerStyle={styles.modal}
+        >
+          {activeIndex !== null && (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Authority #{activeIndex + 1}
+              </Text>
 
-              {values?.VendorDetails?.companyType === 'CHALAK MALAK' ? (
+              <Dropdown
+                label="Designation *"
+                data={designationOptions}
+                value={vendorEmployeeDetails[activeIndex]?.designation}
+                onChange={handleDesignationChange}
+              />
+
+              {isOtherDesignationSelected(activeIndex) && (
                 <Input
-                  label="Designation *"
-                  value={item.designation}
+                  label="Enter Designation *"
                   mode="outlined"
-                  style={styles.input}
-                  editable={false}
+                  value={
+                    vendorEmployeeDetails[activeIndex]?.customDesignation || ''
+                  }
+                  onChangeText={text =>
+                    handleFieldChange('customDesignation', text)
+                  }
+                  left={<TextInput.Icon icon="pencil" />}
                 />
-              ) : (
-                <>
-                  <Dropdown
-                    label="Designation *"
-                    data={
-                      designationList?.data
-                        ? [
-                            ...designationList.data,
-                            { label: 'Other', value: 'Other' },
-                          ]
-                        : [{ label: 'Other', value: 'Other' }]
-                    }
-                    value={item?.designation}
-                    onChange={text =>
-                      setFieldValue(
-                        `VendorEmployeeDetails[${index}].designation`,
-                        text,
-                      )
-                    }
-                    error={
-                      !!(errors?.VendorEmployeeDetails?.[index] as any)
-                        ?.designation
-                    }
-                    errorMessage={
-                      (errors?.VendorEmployeeDetails?.[index] as any)
-                        ?.designation
-                    }
-                  />
-
-                  {isOtherDesignationSelected(index) && (
-                    <Input
-                      label="Enter Designation *"
-                      value={item.customDesignation || ''}
-                      mode="outlined"
-                      style={[styles.input, styles.otherInput]}
-                      left={<TextInput.Icon icon="pencil" />}
-                      onChangeText={text =>
-                        setFieldValue(
-                          `VendorEmployeeDetails[${index}].customDesignation`,
-                          text,
-                        )
-                      }
-                      error={
-                        (errors?.VendorEmployeeDetails?.[index] as any)
-                          ?.customDesignation
-                      }
-                    />
-                  )}
-                </>
               )}
 
               <Input
                 label="Full Name *"
-                value={item.full_name}
                 mode="outlined"
-                style={styles.input}
-                left={<TextInput.Icon icon="account" />}
-                onChangeText={text =>
-                  setFieldValue(
-                    `VendorEmployeeDetails[${index}].full_name`,
-                    text.toUpperCase(),
-                  )
-                }
-                error={
-                  (errors?.VendorEmployeeDetails?.[index] as any)?.full_name
-                }
+                value={vendorEmployeeDetails[activeIndex]?.full_name}
+                onChangeText={text => handleFieldChange('full_name', text)}
               />
 
               <Input
                 label="Mobile Number *"
-                value={item.contact_No}
-                mode="outlined"
-                style={styles.input}
-                left={<TextInput.Icon icon="phone" />}
                 keyboardType="phone-pad"
+                mode="outlined"
                 maxLength={10}
+                value={vendorEmployeeDetails[activeIndex]?.contact_No}
                 onChangeText={text =>
-                  setFieldValue(
-                    `VendorEmployeeDetails[${index}].contact_No`,
-                    text,
-                  )
-                }
-                error={
-                  (errors?.VendorEmployeeDetails?.[index] as any)?.contact_No
+                  handleFieldChange('contact_No', text.replace(/[^0-9]/g, ''))
                 }
               />
 
               <Input
                 label="Email Address"
-                value={item.emailAddress}
-                mode="outlined"
-                style={styles.input}
-                left={<TextInput.Icon icon="email" />}
                 keyboardType="email-address"
-                autoCapitalize="none"
+                mode="outlined"
+                value={vendorEmployeeDetails[activeIndex]?.emailAddress}
                 onChangeText={text =>
-                  setFieldValue(
-                    `VendorEmployeeDetails[${index}].emailAddress`,
-                    text,
-                  )
-                }
-                error={
-                  (errors?.VendorEmployeeDetails?.[index] as any)?.emailAddress
+                  handleFieldChange('emailAddress', text.trim())
                 }
               />
-            </Card.Content>
-          </Card>
-        )}
-        ListEmptyComponent={() => (
-          <EmptyState title="Authority Not Available" />
-        )}
-      />
+
+              <View style={styles.modalActions}>
+                <Button
+                  mode="outlined"
+                  onPress={closeModal}
+                  style={styles.cancelBtn}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleSaveAuthority}
+                  style={styles.saveBtn}
+                >
+                  Save Authority
+                </Button>
+              </View>
+            </ScrollView>
+          )}
+        </Modal>
+      </Portal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-
-  // ⭐ INDUSTRY STANDARD FLOATING SKIP
-  floatingSkipContainer: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 99999,
-    elevation: 10,
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
   },
-  floatingSkipBtn: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
+  summaryCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    elevation: 2,
   },
-  floatingSkipLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  summaryCard: { marginBottom: 16 },
-  summaryContent: { paddingVertical: 12 },
-
-  headerSection: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-
-  headerText: { flex: 1 },
-
   mainTitle: {
     fontWeight: '600',
     color: '#2c3e50',
-    marginBottom: 4,
+    flex: 1,
   },
-
-  maxCountInput: { backgroundColor: '#fff', flex: 1 },
-
-  countBadge: {
-    backgroundColor: '#3498db',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+  skipBtn: {
+    borderRadius: 20,
   },
-  countBadgeFull: { backgroundColor: '#ff6b6b' },
-
-  countText: {
-    color: '#fff',
-    fontWeight: '600',
+  skipLabel: {
     fontSize: 12,
-    paddingVertical: 8,
-    width: 100,
+    fontWeight: '600',
   },
-
-  addButton: {
-    marginTop: 8,
-    marginBottom: 8,
-    borderColor: '#3498db',
-  },
-
-  buttonContent: { paddingVertical: 6 },
-
-  maxLimitCard: {
-    marginTop: 8,
-    marginBottom: 8,
-    backgroundColor: '#fff3e0',
-    borderWidth: 1,
-    borderColor: '#ff9800',
-  },
-  maxLimitContent: { flexDirection: 'row', alignItems: 'center' },
-  maxLimitText: { color: '#e65100', marginLeft: 4, fontSize: 12 },
-
-  contactCard: { marginBottom: 12 },
-  cardHeader: {
+  countSection: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 12,
   },
-
-  input: { marginBottom: 6, backgroundColor: '#fff' },
-  otherInput: { marginTop: 6 },
-
-  contactNumberText: {
-    fontWeight: '600',
-    fontSize: 14,
-    color: '#2c3e50',
+  inputContainer: {
+    flex: 1,
   },
-
-  removeButton: { padding: 0, margin: 0 },
+  countBadge: {
+    backgroundColor: '#3498db',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  countBadgeFull: {
+    backgroundColor: '#e74c3c',
+  },
+  countText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  helperText: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  listContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  authorityBtn: {
+    marginVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1.5,
+  },
+  leftAlignedButton: {
+    justifyContent: 'flex-start',
+  },
+  buttonLabel: {
+    textAlign: 'left',
+  },
+  modal: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginVertical: 40,
+    padding: 20,
+    borderRadius: 12,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 20,
+    fontSize: 18,
+  },
+  fieldSpacing: {
+    marginBottom: 16,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  cancelBtn: {
+    minWidth: 100,
+  },
+  saveBtn: {
+    minWidth: 140,
+  },
 });
 
 export default Step2Form;

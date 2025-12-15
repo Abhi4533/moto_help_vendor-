@@ -119,7 +119,7 @@ const Step3Form: React.FC = () => {
   // pan number change
   const handlePanChange = useCallback(
     (text: string) => {
-      const pan = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const pan = text;
       if (isGSTVerified || isPANVerified) {
         setFieldValue('VendorDetails.verifiedCompanyName', '');
         setFieldValue('VendorDetails.verifiedPanName', '');
@@ -276,6 +276,7 @@ const Step3Form: React.FC = () => {
                   activeOutlineColor={COLORS.primary}
                   editable={true}
                   error={(errors?.kycDetails as any)?.panNo}
+                  autoCapitalize="characters"
                 />
               </View>
               {isPANVerifyButtonActive && (
@@ -358,7 +359,7 @@ const Step3Form: React.FC = () => {
                       onChangeText={text =>
                         setFieldValue(
                           `VehicleDetails[${index}].vehicle_number`,
-                          text?.toUpperCase(),
+                          text,
                         )
                       }
                       style={[styles.vehicleInput, styles.regInput]}
@@ -371,6 +372,7 @@ const Step3Form: React.FC = () => {
                       error={
                         (errors?.VehicleDetails as any)?.[index]?.vehicle_number
                       }
+                      autoCapitalize="characters"
                     />
                   </View>
                   <View style={{ flex: 1 }}>

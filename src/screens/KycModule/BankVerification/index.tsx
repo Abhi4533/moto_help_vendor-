@@ -107,26 +107,19 @@ const BankVerification = () => {
 
   const handleFinalSubmit = async (values: BankDetailsType) => {
     try {
-      console.log({ conpanyInfo, values });
       if (!conpanyInfo?.companyName) return;
-      if (values?.bank_ac_holder_name === conpanyInfo?.companyName) {
-        const base64Img = await convertToBase64(passbookImage?.uri!);
-        const resp = await validateBank({
-          ...values,
-          cheque_img: base64Img,
-          vendorid: vendorId,
-        }).unwrap();
-        if (resp?.status === '00') {
-          dispatch(setKycStatus('COMPLETED'));
-          navigation.navigate('Dashboard');
-        } else {
-          Toast.show({ type: 'error', text1: resp?.message });
-        }
+
+      const base64Img = await convertToBase64(passbookImage?.uri!);
+      const resp = await validateBank({
+        ...values,
+        cheque_img: base64Img,
+        vendorid: vendorId,
+      }).unwrap();
+      if (resp?.status === '00') {
+        dispatch(setKycStatus('COMPLETED'));
+        navigation.navigate('Dashboard');
       } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Regeisterd user Should Match with Bank User Name',
-        });
+        Toast.show({ type: 'error', text1: resp?.message });
       }
     } catch (error) {}
   };
@@ -206,9 +199,8 @@ const BankVerification = () => {
                   label="Account Holder Name *"
                   mode="outlined"
                   value={values.bank_ac_holder_name}
-                  onChangeText={t =>
-                    setFieldValue('bank_ac_holder_name', t.toUpperCase())
-                  }
+                  onChangeText={t => setFieldValue('bank_ac_holder_name', t)}
+                  autoCapitalize="characters"
                   error={errors.bank_ac_holder_name}
                 />
 
@@ -268,9 +260,8 @@ const BankVerification = () => {
                   label="IFSC Code *"
                   mode="outlined"
                   value={values.ifsc_code}
-                  onChangeText={t =>
-                    setFieldValue('ifsc_code', t.toUpperCase())
-                  }
+                  onChangeText={t => setFieldValue('ifsc_code', t)}
+                  autoCapitalize="characters"
                   maxLength={11}
                   error={errors.ifsc_code}
                 />
@@ -279,9 +270,8 @@ const BankVerification = () => {
                   label="Bank Name *"
                   mode="outlined"
                   value={values.bank_name}
-                  onChangeText={t =>
-                    setFieldValue('bank_name', t.toUpperCase())
-                  }
+                  onChangeText={t => setFieldValue('bank_name', t)}
+                  autoCapitalize="characters"
                   error={errors.bank_name}
                 />
 
@@ -289,9 +279,8 @@ const BankVerification = () => {
                   label="Branch *"
                   mode="outlined"
                   value={values.branch_name}
-                  onChangeText={t =>
-                    setFieldValue('branch_name', t.toUpperCase())
-                  }
+                  onChangeText={t => setFieldValue('branch_name', t)}
+                  autoCapitalize="characters"
                   error={errors.branch_name}
                 />
 
