@@ -8,11 +8,13 @@ import CustomDrawer from './CustomDrawer';
 interface Props {
   children: React.ReactNode;
   title?: string;
+  kycEnabled?: boolean;
 }
 
 const TemporaryDashboardLayout: FC<Props> = ({
   children,
   title = 'Temporary Dashboard',
+  kycEnabled = true,
 }) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
 
@@ -25,7 +27,7 @@ const TemporaryDashboardLayout: FC<Props> = ({
 
       <View style={styles.content}>{children}</View>
 
-      <CustomBottomTab />
+      <CustomBottomTab kycEnabled />
 
       <CustomDrawer visible={drawerVisible} onSelect={setDrawerVisible} />
     </View>

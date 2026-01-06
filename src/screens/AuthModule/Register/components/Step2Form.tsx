@@ -1,3 +1,4 @@
+import { useFormikContext } from 'formik';
 import React, { useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import {
@@ -9,7 +10,6 @@ import {
   Text,
   TextInput,
 } from 'react-native-paper';
-import { useFormikContext } from 'formik';
 
 import { useGetDesignationListQuery } from '@api/hooks_api';
 import {
@@ -19,6 +19,7 @@ import {
 import Dropdown from '@components/common/Dropdown';
 import Input from '@components/common/Input';
 import Loader from '@components/common/Loader';
+import { StepTwoSchema } from '../validationSchema';
 
 const EMPTY_AUTHORITY: VendorEmployeeDetails = {
   full_name: '',
@@ -42,7 +43,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const { values, setFieldValue, errors } =
+  const { values, setFieldValue, errors, setErrors, setTouched } =
     useFormikContext<VendorRegistrationRequest>();
   const { data: designationList, isLoading } = useGetDesignationListQuery();
 
@@ -82,8 +83,19 @@ const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
     setActiveIndex(null);
   };
 
-  const handleSaveAuthority = () => {
-    closeModal();
+  const handleSaveAuthority = async () => {
+    try {
+      await StepTwoSchema.validate(values, { abortEarly: false });
+
+      closeModal();
+    } catch (err: any) {
+      const formErrors: Record<string, string> = {};
+      err.inner?.forEach((error: any) => {
+        if (error.path) formErrors[error.path] = error.message;
+      });
+      setErrors(formErrors);
+      setTouched(formErrors);
+    }
   };
 
   const handleDesignationChange = (text: any) => {
@@ -137,7 +149,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
       {item.full_name || `Add Authority ${index + 1}`}
     </Button>
   );
-
+  console.log({ errors });
   return (
     <View style={styles.container}>
       <Loader visible={isLoading} />
@@ -224,6 +236,12 @@ const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
                 data={designationOptions}
                 value={vendorEmployeeDetails[activeIndex]?.designation}
                 onChange={handleDesignationChange}
+                error={
+                  !!errors?.VendorEmployeeDetails?.[activeIndex]?.designation
+                }
+                errorMessage={
+                  errors?.VendorEmployeeDetails?.[activeIndex]?.designation
+                }
               />
 
               {isOtherDesignationSelected(activeIndex) && (
@@ -237,6 +255,10 @@ const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
                     handleFieldChange('customDesignation', text)
                   }
                   left={<TextInput.Icon icon="pencil" />}
+                  error={
+                    errors?.VendorEmployeeDetails?.[activeIndex]
+                      ?.customDesignation
+                  }
                 />
               )}
 
@@ -245,6 +267,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
                 mode="outlined"
                 value={vendorEmployeeDetails[activeIndex]?.full_name}
                 onChangeText={text => handleFieldChange('full_name', text)}
+                error={errors?.VendorEmployeeDetails?.[activeIndex]?.full_name}
               />
 
               <Input
@@ -256,6 +279,7 @@ const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
                 onChangeText={text =>
                   handleFieldChange('contact_No', text.replace(/[^0-9]/g, ''))
                 }
+                error={errors?.VendorEmployeeDetails?.[activeIndex]?.contact_No}
               />
 
               <Input
@@ -265,6 +289,9 @@ const Step2Form: React.FC<Step2FormProps> = ({ onSkip }) => {
                 value={vendorEmployeeDetails[activeIndex]?.emailAddress}
                 onChangeText={text =>
                   handleFieldChange('emailAddress', text.trim())
+                }
+                error={
+                  errors?.VendorEmployeeDetails?.[activeIndex]?.emailAddress
                 }
               />
 

@@ -28,6 +28,8 @@ module.exports = {
           '@store': './src/store',
           '@types': './src/types',
           '@utils': './src/utils',
+          '@socket': './src/socket',
+          '@services': './src/services',
         },
       },
     ],

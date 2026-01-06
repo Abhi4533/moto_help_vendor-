@@ -36,6 +36,7 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
+    console.log({ values });
     if (
       values?.VendorDetails?.verifiedPanName === '' &&
       values?.VendorDetails?.verifiedPanName === ''

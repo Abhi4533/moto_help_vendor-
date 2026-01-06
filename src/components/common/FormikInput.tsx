@@ -24,7 +24,7 @@ const FormikInput: React.FC<FormikInputProps> = ({ name, ...props }) => {
             : helpers.setValue(text)
         }
         onBlur={() => helpers.setTouched(true)}
-        error={showError}
+        error={!!meta?.error}
       />
       {showError && <Text style={styles.errorText}>{meta.error}</Text>}
     </View>

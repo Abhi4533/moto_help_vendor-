@@ -48,7 +48,7 @@ const TemporaryDashboard = () => {
   }, [fetchData]);
 
   return (
-    <TemporaryDashboardLayout>
+    <TemporaryDashboardLayout kycEnabled>
       <View style={styles.container}>
         {/* ---- TOP STEP INDICATOR ---- */}
         <View style={styles.stepRow}>

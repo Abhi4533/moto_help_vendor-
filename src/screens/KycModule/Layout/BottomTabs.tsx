@@ -5,7 +5,9 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import { TAB_ITEMS } from './helper';
 
-const CustomBottomTab: React.FC = () => {
+const CustomBottomTab: React.FC<{ kycEnabled?: boolean }> = ({
+  kycEnabled,
+}) => {
   const navigation = useNavigation<any>();
   const route = useRoute();
 
@@ -19,6 +21,7 @@ const CustomBottomTab: React.FC = () => {
             key={tab.id}
             style={styles.tabItem}
             onPress={() => navigation.navigate(tab.id)}
+            disabled={tab?.id === 'BankVerification' && !kycEnabled}
           >
             <Icon
               source={tab.icon}
