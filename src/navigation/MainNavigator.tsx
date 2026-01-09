@@ -4,7 +4,11 @@ import AvailabileVehicle from '@screens/Dashboard/AvailabileVehicle';
 import DriverList from '@screens/Dashboard/DriverList';
 import ValidateVehicle from '@screens/Dashboard/ValidateVehicle';
 import ProfileNavigator from '@screens/Profile';
-import React from 'react';
+import { emitJoinVendor } from '@socket/socket.emitters';
+import { registerSocketListeners } from '@socket/socket.listeners';
+import { RootState } from '@store/index';
+import React, { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import MainDashboard from '../screens/Dashboard/MainDashboard';
 // import MainDashboard from '../screens/Dashboard/MainDashboard';
 // import DriverList from '../screens/DriverModule/DriverList';
@@ -23,18 +27,28 @@ export type MainStackParamList = {
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
-const MainNavigator = () => (
-  <Stack.Navigator
-    initialRouteName="Dashboard"
-    screenOptions={{ headerShown: false }}
-  >
-    <Stack.Screen name="Dashboard" component={MainDashboard} />
-    <Stack.Screen name="Vehicles" component={ValidateVehicle} />
-    <Stack.Screen name="Drivers" component={DriverList} />
-    <Stack.Screen name="Assign" component={VehicleAssignment} />
-    <Stack.Screen name="Available" component={AvailabileVehicle} />
-    <Stack.Screen name="ProfileNavigator" component={ProfileNavigator} />
-  </Stack.Navigator>
-);
+const MainNavigator = () => {
+  const { token } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if (!token) return;
+    emitJoinVendor(token);
+    registerSocketListeners();
+  }, [token]);
+
+  return (
+    <Stack.Navigator
+      initialRouteName="Dashboard"
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen name="Dashboard" component={MainDashboard} />
+      <Stack.Screen name="Vehicles" component={ValidateVehicle} />
+      <Stack.Screen name="Drivers" component={DriverList} />
+      <Stack.Screen name="Assign" component={VehicleAssignment} />
+      <Stack.Screen name="Available" component={AvailabileVehicle} />
+      <Stack.Screen name="ProfileNavigator" component={ProfileNavigator} />
+    </Stack.Navigator>
+  );
+};
 
 export default MainNavigator;

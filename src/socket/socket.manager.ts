@@ -2,9 +2,7 @@ import { createSocket } from './socket.instance';
 
 export const initSocket = (VendorID: string) => {
   const socket = createSocket();
-
-  socket.auth = { VendorID };
-
+  // socket.auth = { VendorID };
   if (!socket.connected) {
     socket.connect();
   }
