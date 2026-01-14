@@ -56,6 +56,7 @@ const Register: React.FC = () => {
           employee_count: String(values?.VendorDetails?.employee_count),
         },
       });
+      console.log({ res });
       if (res?.status === '00') {
         dispatch(loginSuccess({ token: res?.userDetails?.vendorid }));
         navigation.replace('Dashboard');
@@ -63,6 +64,7 @@ const Register: React.FC = () => {
         Toast.show({ type: 'error', text1: res?.message });
       }
     } catch (error) {
+      console.log({ error });
     } finally {
       setLoading(false);
     }

@@ -4,7 +4,7 @@ import AvailabileVehicle from '@screens/Dashboard/AvailabileVehicle';
 import DriverList from '@screens/Dashboard/DriverList';
 import ValidateVehicle from '@screens/Dashboard/ValidateVehicle';
 import ProfileNavigator from '@screens/Profile';
-import { emitJoinVendor } from '@socket/socket.emitters';
+import { emitVendorJoin } from '@socket/socket.emitters';
 import { registerSocketListeners } from '@socket/socket.listeners';
 import { RootState } from '@store/index';
 import React, { useEffect } from 'react';
@@ -32,10 +32,9 @@ const MainNavigator = () => {
 
   useEffect(() => {
     if (!token) return;
-    emitJoinVendor(token);
     registerSocketListeners();
+    emitVendorJoin(token);
   }, [token]);
-
   return (
     <Stack.Navigator
       initialRouteName="Dashboard"

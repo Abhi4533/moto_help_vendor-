@@ -6,6 +6,7 @@ import {
 } from '@api/endpoints/vehicle.api';
 import Geolocation from '@react-native-community/geolocation';
 import { useIsFocused } from '@react-navigation/native';
+import { emitGetVendorLocations } from '@socket/socket.emitters';
 import { RootState } from '@store/index';
 import {
   clearMapData,
@@ -183,7 +184,7 @@ export const DashboardProvider = ({
   };
 
   useEffect(() => {
-    Geolocation.getCurrentPosition(
+    Geolocation.watchPosition(
       pos => {
         dispatch(
           setVendorLocation({
@@ -191,9 +192,13 @@ export const DashboardProvider = ({
             longitude: pos.coords.longitude,
           }),
         );
+        emitGetVendorLocations({
+          lat: pos?.coords?.latitude,
+          lng: pos?.coords?.longitude,
+          VendorID: vendorid!,
+        });
       },
       error => Alert.alert('Location Error', JSON.stringify(error)),
-      { enableHighAccuracy: true },
     );
   }, [isFocus, vendorid]);
   return (

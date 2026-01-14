@@ -13,7 +13,7 @@ const RootNavigator = () => {
 
   useEffect(() => {
     if (!token) return;
-    initSocket(token);
+    initSocket();
   }, [token]);
   if (!isLoggedIn) return <AuthNavigator />;
   if (kycStatus !== 'COMPLETED') return <KycNavigator />;

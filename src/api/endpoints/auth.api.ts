@@ -25,5 +25,6 @@ export const register = async (
   payload: VendorRegistrationRequest,
 ): Promise<VendorRegistrationResponse> => {
   const response = await apiClient.post('/VendorOnboarding', payload);
+  console.log({ response });
   return response.data;
 };
