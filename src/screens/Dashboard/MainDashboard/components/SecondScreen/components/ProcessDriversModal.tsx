@@ -62,7 +62,7 @@ const ProcessDriversModal = () => {
         },
       }),
     );
-    emitDriverSelect({DriverID:driver?.driver_id})
+    emitDriverSelect({ DriverID: driver?.driver_id });
     onDismiss(false);
   };
 

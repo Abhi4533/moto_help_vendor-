@@ -1,10 +1,10 @@
 // src/store/slices/mapSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Item } from 'react-native-paper/lib/typescript/components/Drawer/Drawer';
 
 export interface Coordinate {
   latitude: number;
   longitude: number;
+  rotation: number;
 }
 
 interface MapState {
@@ -35,12 +35,25 @@ const mapSlice = createSlice({
       state.vendorLocation = action.payload;
     },
     setDriverLocations(state, action: PayloadAction<any[]>) {
-      state.driverLocations = action.payload?.map(Item=>{
-        return {latitude:Number(Item?.lat),longitude:Number(Item?.lng)}
+      state.driverLocations = action.payload?.map(Item => {
+        return {
+          latitude: Number(Item?.lat),
+          longitude: Number(Item?.lng),
+          rotation: 0,
+        };
       });
     },
     setCustomerLocations(state, action: PayloadAction<Coordinate[]>) {
       state.customerLocations = action.payload;
+    },
+    setCustomerLods(state, action: PayloadAction<any[]>) {
+      state.customerLocations = action.payload?.map(item => {
+        return {
+          latitude: Number(item?.lat),
+          longitude: Number(item?.lng),
+          rotation: 0,
+        };
+      });
     },
     setPickupLocation(state, action: PayloadAction<Coordinate>) {
       state.pickupLocation = action.payload;
@@ -108,6 +121,7 @@ export const {
   setDriverAndCustomerLocations,
   setDriverAndPickupLocations,
   setDriverPickupAndDestinationLocations,
+  setCustomerLods,
 } = mapSlice.actions;
 
 export default mapSlice.reducer;

@@ -1,9 +1,6 @@
 import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
 import { emitDriverSelect } from '@socket/socket.emitters';
-import {
-  clearMapData,
-  setDriverAndCustomerLocations,
-} from '@store/slices/mapSlice';
+import { clearMapData } from '@store/slices/mapSlice';
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -73,26 +70,7 @@ const IdleDriversModal = () => {
 
   const handleDriverPress = (driver: any) => {
     dispatch(clearMapData());
-    const loadsData: any = (driver.loads || [])
-      .filter(
-        (load: any) =>
-          load.pickup_Latitude !== 0 && load.pickup_Longitude !== 0,
-      )
-      .map((load: any) => ({
-        latitude: load.pickup_Latitude || 0,
-        longitude: load.pickup_Longitude || 0,
-      }));
-    console.log({ loadsData,driver });
-    dispatch(
-      setDriverAndCustomerLocations({
-        driver: {
-          latitude: driver?.Driver_Latitude || 0,
-          longitude: driver?.Driver_Longitude || 0,
-        },
-        customers: loadsData,
-      }),
-    );
-    emitDriverSelect({DriverID:driver?.driver_id})
+    emitDriverSelect({ DriverID: driver?.driver_id });
     onDismiss(false);
   };
 

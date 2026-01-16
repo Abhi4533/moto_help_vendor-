@@ -10,10 +10,11 @@ export const SOCKET_EVENTS = {
   DRIVER_LOCATION: 'vendor:driver_location',
   DRIVER_STATUS: 'vendor:driver_status',
   DRIVER_ASSIGNED: 'vendor:driver_assigned',
-  NEARBY_LOADS: 'vendor:nearby_loads',
+  NEARBY_LOADS: 'vendor:available_loads',
 
   UPDATE_LP_STATUS: 'vendor:update_lp_status',
   DRIVER_LIST: 'vendor:drivers_list',
   DRIVER_LP_UPDATE: 'vendor:driver_update',
-  SELECT_DRIVER:"vendor:select_driver"
+  SELECT_DRIVER: 'vendor:select_driver',
+  SELECTED_DRIVER_NEARBY_LOADS: 'vendor:selected_driver_loads',
 };
