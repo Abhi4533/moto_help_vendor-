@@ -1,4 +1,5 @@
 import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
+import { emitDriverSelect } from '@socket/socket.emitters';
 import {
   clearMapData,
   setDriverAndCustomerLocations,
@@ -81,7 +82,7 @@ const IdleDriversModal = () => {
         latitude: load.pickup_Latitude || 0,
         longitude: load.pickup_Longitude || 0,
       }));
-    console.log({ loadsData });
+    console.log({ loadsData,driver });
     dispatch(
       setDriverAndCustomerLocations({
         driver: {
@@ -91,6 +92,7 @@ const IdleDriversModal = () => {
         customers: loadsData,
       }),
     );
+    emitDriverSelect({DriverID:driver?.driver_id})
     onDismiss(false);
   };
 

@@ -1,5 +1,6 @@
 // src/store/slices/mapSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Item } from 'react-native-paper/lib/typescript/components/Drawer/Drawer';
 
 export interface Coordinate {
   latitude: number;
@@ -33,8 +34,10 @@ const mapSlice = createSlice({
     setVendorLocation(state, action: PayloadAction<Coordinate>) {
       state.vendorLocation = action.payload;
     },
-    setDriverLocations(state, action: PayloadAction<Coordinate[]>) {
-      state.driverLocations = action.payload;
+    setDriverLocations(state, action: PayloadAction<any[]>) {
+      state.driverLocations = action.payload?.map(Item=>{
+        return {latitude:Number(Item?.lat),longitude:Number(Item?.lng)}
+      });
     },
     setCustomerLocations(state, action: PayloadAction<Coordinate[]>) {
       state.customerLocations = action.payload;

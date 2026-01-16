@@ -31,3 +31,15 @@ export const emitDriverLoadPost = (payload: {
 
   socket.connected ? emit() : socket.once('connect', emit);
 };
+
+export const emitDriverSelect = (payload: {
+ 
+  DriverID: string;
+ 
+}) => {
+  console.log({payload})
+  const socket = getSocket();
+  const emit = () => socket.emit(SOCKET_EVENTS.SELECT_DRIVER, payload);
+
+  socket.connected ? emit() : socket.once('connect', emit);
+};

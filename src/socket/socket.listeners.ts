@@ -1,6 +1,8 @@
 // socket.listeners.ts
+import { store } from '@store/index';
 import { SOCKET_EVENTS } from './socket.events';
 import { getSocket } from './socket.service';
+import { setDestinationLocation, setDriverLocations, setLiveDriverLocation } from '@store/slices/mapSlice';
 
 let attached = false;
 
@@ -16,7 +18,7 @@ export const registerSocketListeners = () => {
 
     socket.on(SOCKET_EVENTS.DRIVER_LOCATION, loads => {
       console.log('📦 DRIVER_LOCATION:', loads);
-      // store.dispatch(setCustomerLocations(loads));
+      store.dispatch(setLiveDriverLocation(loads));
     });
 
     socket.on(SOCKET_EVENTS.DRIVER_STATUS, loads => {
@@ -38,11 +40,19 @@ export const registerSocketListeners = () => {
 
     socket.on(SOCKET_EVENTS.DRIVER_LIST, loads => {
       console.log('📦 DRIVER_LIST:', loads);
+
+      store.dispatch(setDriverLocations(loads));
+    });
+
+    socket.on(SOCKET_EVENTS.DRIVER_LP_UPDATE, loads => {loads
+
+      console.log('📦 DRIVER_LP_UPDATE:', loads);
       // store.dispatch(setCustomerLocations(loads));
     });
 
-    socket.on(SOCKET_EVENTS.DRIVER_LP_UPDATE, loads => {
-      console.log('📦 DRIVER_LP_UPDATE:', loads);
+      socket.on("vendor:selectd_driver_loads", loads => {
+
+      console.log('📦 selected drivers loads:', loads);
       // store.dispatch(setCustomerLocations(loads));
     });
     // socket.on(SOCKET_EVENTS.NEW_LOAD, load => {

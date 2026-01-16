@@ -1,4 +1,5 @@
 import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
+import { emitDriverSelect } from '@socket/socket.emitters';
 import {
   clearMapData,
   setDriverPickupAndDestinationLocations,
@@ -72,6 +73,7 @@ const ActiveTripsModal = () => {
         },
       }),
     );
+    emitDriverSelect({DriverID:driver?.driver_id})
     onDismiss(false);
   };
 
