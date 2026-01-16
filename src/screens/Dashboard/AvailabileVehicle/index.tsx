@@ -10,7 +10,7 @@ import {
 import { Item } from '@components/common/Dropdown';
 import FormikDropdown from '@components/common/FormikDropdown';
 import { useNavigation } from '@react-navigation/native';
-import { emitVenderIdDriverId } from '@socket/socket.emitters';
+import { emitDriverLoadPost } from '@socket/socket.emitters';
 import { RootState } from '@store/index';
 import { Formik } from 'formik';
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -109,7 +109,8 @@ const AvailabileVehicle = () => {
       const response = await avialbleVehicle(payload);
 
       if (response?.status === '00') {
-        emitVenderIdDriverId({
+        emitDriverLoadPost({
+          Driver_LPStatus: 'Pending',
           VendorID: values.vendorid,
           DriverID: values.driverID,
         });

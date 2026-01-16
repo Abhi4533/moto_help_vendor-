@@ -35,6 +35,16 @@ export const registerSocketListeners = () => {
       console.log('📦 DRIVER_ASSIGNED:', loads);
       // store.dispatch(setCustomerLocations(loads));
     });
+
+    socket.on(SOCKET_EVENTS.DRIVER_LIST, loads => {
+      console.log('📦 DRIVER_LIST:', loads);
+      // store.dispatch(setCustomerLocations(loads));
+    });
+
+    socket.on(SOCKET_EVENTS.DRIVER_LP_UPDATE, loads => {
+      console.log('📦 DRIVER_LP_UPDATE:', loads);
+      // store.dispatch(setCustomerLocations(loads));
+    });
     // socket.on(SOCKET_EVENTS.NEW_LOAD, load => {
     //   console.log('🆕 New Load:', load);
     //   store.dispatch(setCustomerLocations([load]));

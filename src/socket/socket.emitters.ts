@@ -20,3 +20,14 @@ export const emitGetVendorLocations = (payload: {
 
   socket.connected ? emit() : socket.once('connect', emit);
 };
+
+export const emitDriverLoadPost = (payload: {
+  VendorID: string;
+  DriverID: string;
+  Driver_LPStatus: string;
+}) => {
+  const socket = getSocket();
+  const emit = () => socket.emit(SOCKET_EVENTS.UPDATE_LP_STATUS, payload);
+
+  socket.connected ? emit() : socket.once('connect', emit);
+};

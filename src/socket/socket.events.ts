@@ -14,5 +14,5 @@ export const SOCKET_EVENTS = {
 
   UPDATE_LP_STATUS: 'vendor:update_lp_status',
   DRIVER_LIST: 'vendor:drivers_list',
-  LIVE_DRIVER_UPDATE: 'vendor:driver_update',
+  DRIVER_LP_UPDATE: 'vendor:driver_update',
 };
