@@ -704,81 +704,82 @@ const MapTab: FC = () => {
               <Truck height={50} width={50} />
             </Marker>
           )}
-          {pickupLocation?.latitude && (
-            <Marker
-              coordinate={{
-                latitude: pickupLocation?.latitude! || 0,
-                longitude: pickupLocation?.longitude! || 0,
-              }}
-              anchor={{ x: 0.5, y: 0.5 }}
-              flat
-              tracksViewChanges={false}
-            >
-              <OriginMarker size={30} />
-            </Marker>
+          {liveDriverLocation?.latitude &&
+            customerLocations?.length &&
+            customerLocations?.map((item, index) => (
+              <Marker
+                coordinate={{
+                  latitude: Number(item?.latitude) || 0,
+                  longitude: Number(item?.longitude) || 0,
+                }}
+                anchor={{ x: 0.5, y: 0.5 }}
+                flat
+                tracksViewChanges={false}
+                key={index}
+              >
+                <Parcel height={50} width={50} />
+                {/* <Truck height={50} width={50} /> */}
+              </Marker>
+            ))}
+
+          {pickupLocation?.latitude && liveDriverLocation?.latitude && (
+            <>
+              <Marker
+                coordinate={{
+                  latitude: pickupLocation?.latitude! || 0,
+                  longitude: pickupLocation?.longitude! || 0,
+                }}
+                anchor={{ x: 0.5, y: 0.5 }}
+                flat
+                tracksViewChanges={false}
+              >
+                <OriginMarker size={30} />
+              </Marker>
+              <MapViewDirections
+                origin={{
+                  latitude: liveDriverLocation?.latitude! || 0,
+                  longitude: liveDriverLocation?.longitude! || 0,
+                }}
+                destination={{
+                  latitude: pickupLocation?.latitude!,
+                  longitude: pickupLocation?.longitude!,
+                }}
+                apikey={ENV.MAP_API_KEY}
+                strokeWidth={5}
+                strokeColor="hotpink"
+                mode="TRANSIT"
+                resetOnChange
+              />
+            </>
           )}
 
-          {customerLocations?.map((item, index) => (
-            <Marker
-              coordinate={{
-                latitude: Number(item?.latitude) || 0,
-                longitude: Number(item?.longitude) || 0,
-              }}
-              anchor={{ x: 0.5, y: 0.5 }}
-              flat
-              tracksViewChanges={false}
-              key={index}
-            >
-              <Parcel height={50} width={50} />
-              {/* <Truck height={50} width={50} /> */}
-            </Marker>
-          ))}
-
-          {destinationLocation?.latitude && (
-            <Marker
-              coordinate={{
-                latitude: destinationLocation?.latitude! || 0,
-                longitude: destinationLocation?.longitude! || 0,
-              }}
-              anchor={{ x: 0.5, y: 0.5 }}
-              flat
-              tracksViewChanges={false}
-            >
-              <DropMarker size={20} />
-            </Marker>
-          )}
-          {liveDriverLocation?.latitude && pickupLocation?.latitude && (
-            <MapViewDirections
-              origin={{
-                latitude: liveDriverLocation?.latitude! || 0,
-                longitude: liveDriverLocation?.longitude! || 0,
-              }}
-              destination={{
-                latitude: pickupLocation?.latitude!,
-                longitude: pickupLocation?.longitude!,
-              }}
-              apikey={ENV.MAP_API_KEY}
-              strokeWidth={5}
-              strokeColor="hotpink"
-              mode="TRANSIT"
-              resetOnChange
-            />
-          )}
-
-          {pickupLocation?.latitude && destinationLocation?.latitude && (
-            <MapViewDirections
-              origin={{
-                latitude: pickupLocation?.latitude! || 0,
-                longitude: pickupLocation?.longitude! || 0,
-              }}
-              destination={{
-                latitude: destinationLocation?.latitude! || 0,
-                longitude: destinationLocation?.longitude! || 0,
-              }}
-              apikey={ENV.MAP_API_KEY}
-              strokeWidth={5}
-              strokeColor="hotpink"
-            />
+          {destinationLocation?.latitude && pickupLocation?.longitude && (
+            <>
+              <Marker
+                coordinate={{
+                  latitude: destinationLocation?.latitude! || 0,
+                  longitude: destinationLocation?.longitude! || 0,
+                }}
+                anchor={{ x: 0.5, y: 0.5 }}
+                flat
+                tracksViewChanges={false}
+              >
+                <DropMarker size={20} />
+              </Marker>
+              <MapViewDirections
+                origin={{
+                  latitude: pickupLocation?.latitude! || 0,
+                  longitude: pickupLocation?.longitude! || 0,
+                }}
+                destination={{
+                  latitude: destinationLocation?.latitude! || 0,
+                  longitude: destinationLocation?.longitude! || 0,
+                }}
+                apikey={ENV.MAP_API_KEY}
+                strokeWidth={5}
+                strokeColor="hotpink"
+              />
+            </>
           )}
         </MapView>
       </View>
