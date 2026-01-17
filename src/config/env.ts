@@ -8,3 +8,4 @@ export const ENV = {
   APP_NAME: 'TruckTransportApp',
   VERSION: '1.0.0',
 };
+

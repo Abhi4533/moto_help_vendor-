@@ -95,7 +95,8 @@ const MapTab: FC = () => {
       >
         {/* 🚚 Driver */}
         {isValid(liveDriverLocation) && (
-          <Marker coordinate={liveDriverLocation!} flat>
+
+          <Marker coordinate={liveDriverLocation!} rotation={liveDriverLocation?.rotation} flat>
             <Truck width={50} height={50} />
           </Marker>
         )}

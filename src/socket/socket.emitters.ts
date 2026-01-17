@@ -26,6 +26,7 @@ export const emitDriverLoadPost = (payload: {
   DriverID: string;
   Driver_LPStatus: string;
 }) => {
+  
   const socket = getSocket();
   const emit = () => socket.emit(SOCKET_EVENTS.UPDATE_LP_STATUS, payload);
 
@@ -33,7 +34,7 @@ export const emitDriverLoadPost = (payload: {
 };
 
 export const emitDriverSelect = (payload: { DriverID: string }) => {
-  console.log({ payload });
+console.log("_select_cehck",{payload})
   const socket = getSocket();
   const emit = () => socket.emit(SOCKET_EVENTS.SELECT_DRIVER, payload);
 

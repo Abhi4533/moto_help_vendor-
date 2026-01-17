@@ -19,30 +19,30 @@ export const registerSocketListeners = () => {
     console.log('🟢 Listeners attached');
 
     socket.on(SOCKET_EVENTS.DRIVER_LOCATION, drivers => {
-      let direction = 0;
-      console.log('📦 DRIVER_LOCATION:', drivers);
+      // let direction = 0;
+      // console.log('📦 DRIVER_LOCATION:', drivers);
 
-      if (prevLocation) {
-        direction = getBearing(
-          prevLocation.latitude,
-          prevLocation.longitude,
-          Number(drivers?.lat),
-          Number(drivers?.lng),
-        );
-      }
+      // if (prevLocation) {
+      //   direction = getBearing(
+      //     prevLocation.latitude,
+      //     prevLocation.longitude,
+      //     Number(drivers?.lat),
+      //     Number(drivers?.lng),
+      //   );
+      // }
 
-      prevLocation = {
-        latitude: Number(drivers?.lat),
-        longitude: Number(drivers?.lng),
-      };
+      // prevLocation = {
+      //   latitude: Number(drivers?.lat),
+      //   longitude: Number(drivers?.lng),
+      // };
 
-      store.dispatch(
-        setLiveDriverLocation({
-          latitude: Number(drivers?.lat),
-          longitude: Number(drivers?.lng),
-          rotation: (direction + ICON_FIX) % 360,
-        }),
-      );
+      // store.dispatch(
+      //   setLiveDriverLocation({
+      //     latitude: Number(drivers?.lat),
+      //     longitude: Number(drivers?.lng),
+      //     rotation: (direction + ICON_FIX) % 360,
+      //   }),
+      // );
     });
 
     socket.on(SOCKET_EVENTS.DRIVER_STATUS, loads => {
@@ -76,6 +76,44 @@ export const registerSocketListeners = () => {
       console.log('📦 SELECTED_DRIVER_NEARBY_LOADS', loads);
       store.dispatch(setCustomerLods(loads?.loads));
     });
+    socket.on('vendor:driver_live_location', data => {
+    let direction = 0;
+    console.log('📦 vendor:driver_live_location:', data);
+
+    if (prevLocation) {
+      direction = getBearing(
+        prevLocation.latitude,
+        prevLocation.longitude,
+        Number(data?.lat),
+        Number(data?.lng),
+      );
+    }
+
+    prevLocation = {
+      latitude: Number(data?.lat),
+      longitude: Number(data?.lng),
+    };
+
+    store.dispatch(
+      setLiveDriverLocation({
+        latitude: Number(data?.lat),
+        longitude: Number(data?.lng),
+        rotation: (direction + ICON_FIX) % 360,
+      }),
+    );
+    console.log('🚚 Driver Live Location:', data);
+
+    /*
+    {
+      DriverID,
+      lat,
+      lng,
+      Status
+    }
+  */
+
+    // map.updateMarker(data.DriverID, data.lat, data.lng)
+  });
   };
 
   socket.connected ? handler() : socket.once('connect', handler);
