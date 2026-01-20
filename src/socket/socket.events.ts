@@ -5,7 +5,7 @@ export const SOCKET_EVENTS = {
 
   // new
   JOIN: 'vendor:join',
-  GET_LIVE_DRIVERS: 'vendor:get_live_drivers',
+
   GET_DRIVERS: 'vendor:live_drivers',
   DRIVER_LOCATION: 'vendor:driver_location',
   DRIVER_STATUS: 'vendor:driver_status',
@@ -17,4 +17,5 @@ export const SOCKET_EVENTS = {
   DRIVER_LP_UPDATE: 'vendor:driver_update',
   SELECT_DRIVER: 'vendor:select_driver',
   SELECTED_DRIVER_NEARBY_LOADS: 'vendor:selected_driver_loads',
+  GET_LIVE_DRIVER: 'vendor:driver_live_location',
 };

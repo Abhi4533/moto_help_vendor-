@@ -1,7 +1,7 @@
 export interface CustomerPost {
   Customer_LoadPostID: string;
-  Origin_Lat: number;
-  Origin_Lng: number;
+  PickupLat: number;
+  PickupLng: number;
 }
 
 export interface VendorLocation {

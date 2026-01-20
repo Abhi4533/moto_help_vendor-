@@ -6,7 +6,6 @@ import {
 } from '@api/endpoints/vehicle.api';
 import Geolocation from '@react-native-community/geolocation';
 import { useIsFocused } from '@react-navigation/native';
-import { emitGetVendorLocations } from '@socket/socket.emitters';
 import { RootState } from '@store/index';
 import {
   clearMapData,
@@ -100,8 +99,10 @@ export const DashboardProvider = ({
     dispatch(
       setDriverAndCustomerLocations({
         driver: {
-          latitude: allData?.[0]?.data?.[0]?.driver?.Driver_Latitude || 0,
-          longitude: allData?.[0]?.data?.[0]?.Driver_Longitude || 0,
+          latitude:
+            Number(allData?.[0]?.data?.[0]?.driver?.Driver_Latitude) || 0,
+          longitude: Number(allData?.[0]?.data?.[0]?.Driver_Longitude) || 0,
+          rotation: 0,
         },
         customers: loadsData.map((load: any) => load.coordinate),
       }),
@@ -127,6 +128,7 @@ export const DashboardProvider = ({
             driver: {
               latitude: allData?.[0]?.data?.[0]?.driver?.Driver_Latitude || 0,
               longitude: allData?.[0]?.data?.[0]?.Driver_Longitude || 0,
+              rotation: 0,
             },
             customers: loadsData.map((load: any) => load.coordinate),
           }),
@@ -139,10 +141,12 @@ export const DashboardProvider = ({
             driver: {
               latitude: allData?.[2]?.data?.[0]?.Driver_Latitude,
               longitude: allData?.[2]?.data?.[0]?.Driver_Longitude,
+              rotation: 0,
             },
             pickup: {
               latitude: allData?.[2]?.data?.[0]?.pickup_Latitude,
               longitude: allData?.[2]?.data?.[0]?.pickup_Longitude,
+              rotation: 0,
             },
           }),
         );
@@ -154,14 +158,17 @@ export const DashboardProvider = ({
             driver: {
               latitude: allData?.[1]?.data?.[0]?.Driver_Latitude,
               longitude: allData?.[1]?.data?.[0]?.dropoff_Longitude,
+              rotation: 0,
             },
             destination: {
               latitude: allData?.[1]?.data?.[0]?.dropoff_Latitude,
               longitude: allData?.[1]?.data?.[0]?.dropoff_Longitude,
+              rotation: 0,
             },
             pickup: {
               latitude: allData?.[1]?.data?.[0]?.pickup_Latitude,
               longitude: allData?.[1]?.data?.[0]?.pickup_Longitude,
+              rotation: 0,
             },
           }),
         );
@@ -190,13 +197,14 @@ export const DashboardProvider = ({
           setVendorLocation({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
+            rotation: 0,
           }),
         );
-        emitGetVendorLocations({
-          lat: pos?.coords?.latitude,
-          lng: pos?.coords?.longitude,
-          VendorID: vendorid!,
-        });
+        // emitGetVendorLocations({
+        //   lat: pos?.coords?.latitude,
+        //   lng: pos?.coords?.longitude,
+        //   VendorID: vendorid!,
+        // });
       },
       error => Alert.alert('Location Error', JSON.stringify(error)),
     );

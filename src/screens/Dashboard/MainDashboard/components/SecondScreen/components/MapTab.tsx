@@ -2,28 +2,35 @@
 
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
-import MapViewDirections from 'react-native-maps-directions';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSelector } from 'react-redux';
 
 import DropMarker from '@assets/map/DropMarker';
 import OriginMarker from '@assets/map/OriginMarker';
-import Truck from '@assets/map/Truck';
 import Parcel from '@assets/map/parcel';
-
+import Truck from '@assets/map/Truck';
 import { ENV } from '@config/env';
+import { useDashboard } from '@screens/Dashboard/Layout/DashboardContext';
 import { RootState } from '@store/index';
 import { INDIA_REGION, MAP_STYLE } from '@utils/mapHelper';
-
-type Coord = { latitude: number; longitude: number };
+import MapViewDirections from 'react-native-maps-directions';
+type Coord = {
+  latitude: number;
+  longitude: number;
+};
 
 const isValid = (c?: Coord | null) =>
   !!c && typeof c.latitude === 'number' && typeof c.longitude === 'number';
 
 const MapTab: FC = () => {
   const mapRef = useRef<MapView>(null);
-  const [routeCoords, setRouteCoords] = useState<Coord[]>([]);
 
+  /** ✅ Separate route states (IMPORTANT) */
+  const [routeOrigin, setRouteOrigin] = useState<Coord | null>(null);
+
+  const [driverToPickup, setDriverToPickup] = useState<Coord[]>([]);
+  const [pickupToDrop, setPickupToDrop] = useState<Coord[]>([]);
+  const { selectedTab } = useDashboard();
   const {
     liveDriverLocation,
     customerLocations,
@@ -31,7 +38,11 @@ const MapTab: FC = () => {
     destinationLocation,
   } = useSelector((state: RootState) => state.map);
 
-  /** 🔹 Collect ALL coordinates for perfect fit */
+  useEffect(() => {
+    setPickupToDrop([]);
+  }, [pickupLocation?.latitude, pickupLocation?.longitude]);
+
+  /** 📍 Fit all points perfectly */
   const fitAll = useCallback(() => {
     if (!mapRef.current) return;
 
@@ -45,7 +56,8 @@ const MapTab: FC = () => {
       if (isValid(c)) coords.push(c);
     });
 
-    routeCoords.forEach(c => coords.push(c));
+    driverToPickup.forEach(c => coords.push(c));
+    pickupToDrop.forEach(c => coords.push(c));
 
     if (coords.length === 0) {
       mapRef.current.animateToRegion(INDIA_REGION, 800);
@@ -61,7 +73,7 @@ const MapTab: FC = () => {
     }
 
     mapRef.current.fitToCoordinates(coords, {
-      edgePadding: { top: 100, right: 100, bottom: 250, left: 100 },
+      edgePadding: { top: 120, right: 100, bottom: 260, left: 100 },
       animated: true,
     });
   }, [
@@ -69,14 +81,23 @@ const MapTab: FC = () => {
     pickupLocation,
     destinationLocation,
     customerLocations,
-    routeCoords,
+    driverToPickup,
+    pickupToDrop,
   ]);
 
-  /** 🔹 Refocus when data changes */
   useEffect(() => {
     const t = setTimeout(fitAll, 600);
     return () => clearTimeout(t);
   }, [fitAll]);
+
+  useEffect(() => {
+    if (!isValid(liveDriverLocation)) return;
+
+    setRouteOrigin({
+      latitude: liveDriverLocation?.latitude || 0,
+      longitude: liveDriverLocation?.longitude || 0,
+    });
+  }, [liveDriverLocation?.latitude, liveDriverLocation?.longitude]);
 
   return (
     <View style={styles.container}>
@@ -91,74 +112,91 @@ const MapTab: FC = () => {
         pitchEnabled={false}
         toolbarEnabled={false}
         moveOnMarkerPress={false}
+        cacheEnabled={false} // 🔥 real-device fix
+        loadingEnabled
+        loadingIndicatorColor="#007AFF"
         onMapReady={fitAll}
       >
-        {/* 🚚 Driver */}
+        {/* 🚚 DRIVER */}
         {isValid(liveDriverLocation) && (
-
-          <Marker coordinate={liveDriverLocation!} rotation={liveDriverLocation?.rotation} flat>
+          <Marker
+            key={`driver-${liveDriverLocation?.latitude}-${liveDriverLocation?.longitude}`}
+            coordinate={liveDriverLocation!}
+            rotation={liveDriverLocation?.rotation ?? 0}
+            flat
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
             <Truck width={50} height={50} />
           </Marker>
         )}
 
-        {/* 📦 Customers */}
-        {customerLocations?.map(
-          (c, i) =>
-            isValid(c) && (
-              <Marker key={`c-${i}`} coordinate={c}>
-                <Parcel width={36} height={36} />
-              </Marker>
-            ),
-        )}
+        {/* 📦 CUSTOMERS */}
+        {selectedTab === 'idle' &&
+          customerLocations?.map(
+            (c, i) =>
+              isValid(c) && (
+                <Marker
+                  key={`customer-${i}-${c.latitude}-${c.longitude}`}
+                  coordinate={c}
+                >
+                  <Parcel width={36} height={36} />
+                </Marker>
+              ),
+          )}
 
-        {/* 📍 Pickup */}
-        {isValid(pickupLocation) && (
+        {/* 📍 PICKUP */}
+        {selectedTab !== 'idle' && isValid(pickupLocation) && (
           <Marker coordinate={pickupLocation!}>
             <OriginMarker size={34} />
           </Marker>
         )}
 
-        {/* 🎯 Destination */}
-        {isValid(destinationLocation) && (
+        {/* 🎯 DESTINATION */}
+        {selectedTab !== 'idle' && isValid(destinationLocation) && (
           <Marker coordinate={destinationLocation!}>
             <DropMarker size={34} />
           </Marker>
         )}
 
-        {/* 🧭 Driver → Pickup */}
-        {isValid(liveDriverLocation) && isValid(pickupLocation) && (
-          <MapViewDirections
-            origin={liveDriverLocation!}
-            destination={pickupLocation!}
-            apikey={ENV.MAP_API_KEY}
-            strokeWidth={5}
-            strokeColor="#FF9500"
-            mode="DRIVING"
-            onReady={r => setRouteCoords(r.coordinates)}
-          />
-        )}
+        {/* 🧭 DRIVER → PICKUP */}
+        {selectedTab === 'process' &&
+          isValid(routeOrigin) &&
+          isValid(pickupLocation) && (
+            <MapViewDirections
+              origin={{
+                latitude: liveDriverLocation!.latitude,
+                longitude: liveDriverLocation!.longitude,
+              }}
+              destination={{
+                latitude: pickupLocation!.latitude,
+                longitude: pickupLocation!.longitude,
+              }}
+              apikey={ENV.MAP_API_KEY}
+              strokeWidth={5}
+              strokeColor="#FF9500"
+              mode="DRIVING"
+            />
+          )}
 
-        {/* 🚚 Pickup → Destination */}
-        {isValid(pickupLocation) && isValid(destinationLocation) && (
-          <MapViewDirections
-            origin={pickupLocation!}
-            destination={destinationLocation!}
-            apikey={ENV.MAP_API_KEY}
-            strokeWidth={6}
-            strokeColor="#007AFF"
-            mode="DRIVING"
-            onReady={r => setRouteCoords(r.coordinates)}
-          />
-        )}
-
-        {/* 🔵 Optional route polyline (backup) */}
-        {routeCoords.length > 1 && (
-          <Polyline
-            coordinates={routeCoords}
-            strokeWidth={4}
-            strokeColor="#34C759"
-          />
-        )}
+        {/* 🚚 PICKUP → DROP */}
+        {selectedTab === 'active' &&
+          isValid(pickupLocation) &&
+          isValid(destinationLocation) && (
+            <MapViewDirections
+              key={`p2d-${liveDriverLocation!.latitude}-${
+                liveDriverLocation!.longitude
+              }`}
+              origin={liveDriverLocation!}
+              destination={destinationLocation!}
+              apikey={ENV.MAP_API_KEY}
+              strokeWidth={6}
+              strokeColor="#007AFF"
+              mode="DRIVING"
+              optimizeWaypoints={false}
+              resetOnChange={true}
+              onReady={r => setPickupToDrop(r.coordinates)}
+            />
+          )}
       </MapView>
     </View>
   );

@@ -37,6 +37,7 @@ interface Errors {
 const AvailabileVehicle = () => {
   const navigation = useNavigation();
   const vendorid = useSelector((state: RootState) => state.auth?.token);
+
   const [routes, setRoutes] = useState<any[]>([]);
   const [origin, setOrigin] = useState<any>(null);
   const [region, setRegion] = useState<string>('');
@@ -84,7 +85,7 @@ const AvailabileVehicle = () => {
   useEffect(() => {
     fetchDriver();
   }, []);
-
+  console.log({ driverData });
   // Initialize form values
   const handleFormSubmit = async (values: any) => {
     try {
@@ -109,10 +110,17 @@ const AvailabileVehicle = () => {
       const response = await avialbleVehicle(payload);
 
       if (response?.status === '00') {
+        // emitDriverLoadPost({
+        //   Driver_LPStatus: 'Pending',
+        //   VendorID: values.vendorid,
+        //   DriverID: values.driverID,
+        // });
         emitDriverLoadPost({
           Driver_LPStatus: 'Pending',
-          VendorID: values.vendorid,
-          DriverID: values.driverID,
+          DriverID: values?.driverID,
+          VendorID: values?.vendorid,
+          lat: driverData?.[0]?.Lat,
+          lng: driverData?.[0]?.Lng,
         });
         Toast.show({
           type: 'success',

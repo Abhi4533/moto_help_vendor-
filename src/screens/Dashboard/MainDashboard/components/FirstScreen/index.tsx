@@ -1,24 +1,24 @@
+import { getNearbyCustomerPosts } from '@api/endpoints/dashboard.api';
 import OriginMarker from '@assets/map/OriginMarker';
 import Parcel from '@assets/map/parcel';
 import { useNavigation } from '@react-navigation/native';
 import { RootState } from '@store/index';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Button, Card, Icon, Text } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { quickActions } from './helper';
 import { styles } from './style';
-import { DEFAULT_INDIA_REGION } from './types';
+import { CustomerPost, DEFAULT_INDIA_REGION } from './types';
 
 const FirstScreen = () => {
   const vendorId = useSelector((state: RootState) => state?.auth?.token);
   const navigation = useNavigation<any>();
   const mapRef = useRef<MapView>(null);
 
-  const { vendorLocation, customerLocations } = useSelector(
-    (state: RootState) => state.map,
-  );
+  const { vendorLocation } = useSelector((state: RootState) => state.map);
+  const [customerPosts, setCustomerPosts] = useState<CustomerPost[]>([]);
 
   /* ---------- FIT FUNCTION ---------- */
   const fitToAllMarkers = () => {
@@ -28,10 +28,10 @@ const FirstScreen = () => {
       latitude: vendorLocation.latitude,
       longitude: vendorLocation.longitude,
     });
-    customerLocations?.forEach(post => {
+    customerPosts.forEach(post => {
       coords.push({
-        latitude: post.latitude,
-        longitude: post.longitude,
+        latitude: post?.PickupLat,
+        longitude: post?.PickupLng,
       });
     });
     mapRef.current.fitToCoordinates(coords, {
@@ -39,6 +39,30 @@ const FirstScreen = () => {
       animated: true,
     });
   };
+
+  const fetchNearbyCustomers = async () => {
+    console.log({ vendorId, vendorLocation });
+    if (!vendorId || !vendorLocation) return;
+
+    try {
+      const resp = await getNearbyCustomerPosts({
+        VendorID: vendorId,
+        vendorLat: vendorLocation.latitude,
+        vendorLng: vendorLocation.longitude,
+      });
+      console.log({ resp });
+      if (resp?.status === '00' && Array.isArray(resp.data)) {
+        setCustomerPosts(resp.data);
+      }
+    } catch (error) {}
+  };
+
+  /* ---------- Fetch customers when vendor changes ---------- */
+  useEffect(() => {
+    if (vendorLocation) {
+      fetchNearbyCustomers();
+    }
+  }, [vendorLocation]);
 
   /* ---------- Auto-zoom on vendor location ---------- */
   useEffect(() => {
@@ -60,7 +84,7 @@ const FirstScreen = () => {
     if (vendorLocation) {
       setTimeout(() => fitToAllMarkers(), 500);
     }
-  }, [vendorLocation, customerLocations]);
+  }, [vendorLocation, customerPosts]);
 
   const renderQuickActionsRow = (startIndex: number) => (
     <View style={styles.quickActionsRow}>
@@ -128,12 +152,12 @@ const FirstScreen = () => {
           )}
 
           {/* Customer Posts */}
-          {customerLocations?.map((post, index) => (
+          {customerPosts?.map(post => (
             <Marker
-              key={index}
+              key={post?.Customer_LoadPostID}
               coordinate={{
-                latitude: post.latitude,
-                longitude: post.longitude,
+                latitude: post?.PickupLat,
+                longitude: post?.PickupLng,
               }}
               anchor={{ x: 0.5, y: 0.5 }}
               flat

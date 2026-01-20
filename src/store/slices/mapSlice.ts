@@ -27,6 +27,81 @@ const initialState: MapState = {
   routePath: [],
 };
 
+// const initialState: MapState = {
+//   vendorLocation: {
+//     latitude: 19.076, // Mumbai
+//     longitude: 72.8777,
+//     rotation: 0,
+//   },
+
+//   pickupLocation: {
+//     latitude: 19.0825, // Andheri East
+//     longitude: 72.8811,
+//     rotation: 0,
+//   },
+
+//   destinationLocation: {
+//     latitude: 19.2183, // Borivali
+//     longitude: 72.9781,
+//     rotation: 0,
+//   },
+
+//   liveDriverLocation: {
+//     latitude: 19.0902, // Near Bandra
+//     longitude: 72.8687,
+//     rotation: 45,
+//   },
+
+//   driverLocations: [
+//     {
+//       latitude: 19.088,
+//       longitude: 72.8679,
+//       rotation: 0,
+//     },
+//     {
+//       latitude: 19.0925,
+//       longitude: 72.8702,
+//       rotation: 90,
+//     },
+//   ],
+
+//   customerLocations: [
+//     {
+//       latitude: 19.085,
+//       longitude: 72.88,
+//       rotation: 0,
+//     },
+//     {
+//       latitude: 19.095,
+//       longitude: 72.875,
+//       rotation: 0,
+//     },
+//   ],
+
+//   routePath: [
+//     {
+//       latitude: 19.076,
+//       longitude: 72.8777,
+//       rotation: 0,
+//     },
+//     {
+//       latitude: 19.0825,
+//       longitude: 72.8811,
+//       rotation: 0,
+//     },
+//     {
+//       latitude: 19.0902,
+//       longitude: 72.8687,
+//       rotation: 0,
+//     },
+//     {
+//       latitude: 19.2183,
+//       longitude: 72.9781,
+//       rotation: 0,
+//     },
+//   ],
+// };
+
 const mapSlice = createSlice({
   name: 'map',
   initialState,

@@ -9,32 +9,39 @@ export const emitVendorJoin = (vendorId: string) => {
   socket.connected ? emit() : socket.once('connect', emit);
 };
 
-export const emitGetVendorLocations = (payload: {
-  VendorID: string;
-  lat: number;
-  lng: number;
-}) => {
-  console.log({ payload });
-  const socket = getSocket();
-  const emit = () => socket.emit(SOCKET_EVENTS.GET_LIVE_DRIVERS, payload);
+// export const emitGetVendorLocations = (payload: {
+//   VendorID: string;
+//   lat: number;
+//   lng: number;
+// }) => {
+//   console.log({ payload });
+//   const socket = getSocket();
+//   const emit = () => socket.emit(SOCKET_EVENTS.GET_LIVE_DRIVERS, payload);
 
-  socket.connected ? emit() : socket.once('connect', emit);
-};
+//   socket.connected ? emit() : socket.once('connect', emit);
+// };
 
 export const emitDriverLoadPost = (payload: {
   VendorID: string;
   DriverID: string;
   Driver_LPStatus: string;
+  lat: any;
+  lng: any;
 }) => {
-  
   const socket = getSocket();
   const emit = () => socket.emit(SOCKET_EVENTS.UPDATE_LP_STATUS, payload);
 
   socket.connected ? emit() : socket.once('connect', emit);
 };
 
-export const emitDriverSelect = (payload: { DriverID: string }) => {
-console.log("_select_cehck",{payload})
+export const emitDriverSelect = (payload: {
+  LPStatus: string;
+  DriverID: string;
+  VendorID: string;
+  lat: any;
+  lng: any;
+}) => {
+  console.log('_select_cehck', { payload });
   const socket = getSocket();
   const emit = () => socket.emit(SOCKET_EVENTS.SELECT_DRIVER, payload);
 
