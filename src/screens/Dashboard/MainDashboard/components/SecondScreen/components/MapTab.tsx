@@ -102,20 +102,20 @@ const MapTab: FC = () => {
   return (
     <View style={styles.container}>
       <MapView
+        userInterfaceStyle="light"
         ref={mapRef}
-        provider={PROVIDER_GOOGLE}
-        style={StyleSheet.absoluteFill}
         initialRegion={INDIA_REGION}
+        style={{ flex: 1 }}
+        provider={PROVIDER_GOOGLE}
+        mapType="standard"
         customMapStyle={MAP_STYLE}
-        zoomEnabled
-        rotateEnabled
-        pitchEnabled={false}
+        showsUserLocation={false}
         toolbarEnabled={false}
         moveOnMarkerPress={false}
-        cacheEnabled={false} // 🔥 real-device fix
-        loadingEnabled
-        loadingIndicatorColor="#007AFF"
-        onMapReady={fitAll}
+        zoomEnabled
+        zoomControlEnabled
+        maxZoomLevel={18}
+        minZoomLevel={4}
       >
         {/* 🚚 DRIVER */}
         {isValid(liveDriverLocation) && (

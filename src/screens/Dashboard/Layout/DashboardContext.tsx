@@ -6,6 +6,7 @@ import {
 } from '@api/endpoints/vehicle.api';
 import Geolocation from '@react-native-community/geolocation';
 import { useIsFocused } from '@react-navigation/native';
+import { emitDriverSelect } from '@socket/socket.emitters';
 import { RootState } from '@store/index';
 import {
   clearMapData,
@@ -66,7 +67,7 @@ export const DashboardProvider = ({
     undefined,
     undefined,
   ]);
-
+  console.log({ allData });
   const fetchData = async () => {
     if (vendorid) {
       try {
@@ -96,17 +97,17 @@ export const DashboardProvider = ({
         latitude: load.pickup_Latitude || 0,
         longitude: load.pickup_Longitude || 0,
       }));
-    dispatch(
-      setDriverAndCustomerLocations({
-        driver: {
-          latitude:
-            Number(allData?.[0]?.data?.[0]?.driver?.Driver_Latitude) || 0,
-          longitude: Number(allData?.[0]?.data?.[0]?.Driver_Longitude) || 0,
-          rotation: 0,
-        },
-        customers: loadsData.map((load: any) => load.coordinate),
-      }),
-    );
+    Number(allData?.[0]?.data?.[0]?.driver?.Driver_Latitude) &&
+      dispatch(
+        setDriverAndCustomerLocations({
+          driver: {
+            latitude: Number(allData?.[0]?.data?.[0]?.Driver_Latitude),
+            longitude: Number(allData?.[0]?.data?.[0]?.Driver_Longitude),
+            rotation: 0,
+          },
+          customers: loadsData.map((load: any) => load.coordinate),
+        }),
+      );
   }, []);
 
   const handleHeaderButtonPress = (sel?: any) => {
@@ -126,13 +127,20 @@ export const DashboardProvider = ({
         dispatch(
           setDriverAndCustomerLocations({
             driver: {
-              latitude: allData?.[0]?.data?.[0]?.driver?.Driver_Latitude || 0,
+              latitude: allData?.[0]?.data?.[0]?.Driver_Latitude || 0,
               longitude: allData?.[0]?.data?.[0]?.Driver_Longitude || 0,
               rotation: 0,
             },
             customers: loadsData.map((load: any) => load.coordinate),
           }),
         );
+        emitDriverSelect({
+          DriverID: allData?.[0]?.data?.[0]?.driver_id,
+          lat: allData?.[0]?.data?.[0]?.Driver_Latitude,
+          lng: allData?.[0]?.data?.[0]?.dropoff_Longitude,
+          LPStatus: allData?.[0]?.data?.[0]?.Driver_LPStatus,
+          VendorID: allData?.[0]?.data?.[0]?.VendorID,
+        });
         setIdleModalVisible(true);
         break;
       case 'process':
@@ -200,11 +208,6 @@ export const DashboardProvider = ({
             rotation: 0,
           }),
         );
-        // emitGetVendorLocations({
-        //   lat: pos?.coords?.latitude,
-        //   lng: pos?.coords?.longitude,
-        //   VendorID: vendorid!,
-        // });
       },
       error => Alert.alert('Location Error', JSON.stringify(error)),
     );

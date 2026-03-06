@@ -62,18 +62,27 @@ const ActiveTripsModal = () => {
         driver: {
           latitude: driver?.Driver_Latitude,
           longitude: driver?.dropoff_Longitude,
+          rotation: 0,
         },
         destination: {
           latitude: driver?.dropoff_Latitude,
           longitude: driver?.dropoff_Longitude,
+          rotation: 0,
         },
         pickup: {
           latitude: driver?.pickup_Latitude,
           longitude: driver?.pickup_Longitude,
+          rotation: 0,
         },
       }),
     );
-    emitDriverSelect({DriverID:driver?.driver_id})
+    emitDriverSelect({
+      DriverID: driver?.driver_id,
+      lat: driver?.Driver_Latitude,
+      lng: driver?.dropoff_Longitude,
+      LPStatus: driver?.Driver_LPStatus,
+      VendorID: driver?.VendorID,
+    });
     onDismiss(false);
   };
 
