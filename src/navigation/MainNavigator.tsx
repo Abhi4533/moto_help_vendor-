@@ -10,6 +10,12 @@ import { RootState } from '@store/index';
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import MainDashboard from '../screens/Dashboard/MainDashboard';
+import DriverScan from '@screens/Dashboard/MainDashboard/DriverOnboarding/DriverScan';
+import DriverDocument from '@screens/Dashboard/MainDashboard/DriverOnboarding/DriverDocument';
+import DriverOnboard from '@screens/Dashboard/MainDashboard/DriverOnboarding/DriverOnboard';
+import DriverRegister from '@screens/Dashboard/MainDashboard/DriverOnboarding/DriverRegister';
+import Index from '@screens/Dashboard/MainDashboard/DriverOnboarding/Index';
+import DriverDiscontinue from '@screens/Dashboard/MainDashboard/DriverOnboarding/DriverDiscontinue';
 // import MainDashboard from '../screens/Dashboard/MainDashboard';
 // import DriverList from '../screens/DriverModule/DriverList';
 // import LiveTracking from '../screens/MapModule/LiveTracking';
@@ -23,6 +29,12 @@ export type MainStackParamList = {
   Assign: undefined;
   Available: undefined;
   ProfileNavigator: undefined;
+  DriverScan: undefined;
+  DriverRegister: undefined;
+  DriverOnboard: undefined;
+  DriverDocument: undefined;
+  DriverIndex: undefined;
+  DriverDiscontinue: undefined;
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -46,6 +58,12 @@ const MainNavigator = () => {
       <Stack.Screen name="Assign" component={VehicleAssignment} />
       <Stack.Screen name="Available" component={AvailabileVehicle} />
       <Stack.Screen name="ProfileNavigator" component={ProfileNavigator} />
+      <Stack.Screen name="DriverScan" component={DriverScan} />
+      <Stack.Screen name="DriverRegister" component={DriverRegister} />
+      <Stack.Screen name="DriverOnboard" component={DriverOnboard} />
+      <Stack.Screen name="DriverDocument" component={DriverDocument} />
+      <Stack.Screen name="DriverIndex" component={Index} />
+      <Stack.Screen name="DriverDiscontinue" component={DriverDiscontinue} />
     </Stack.Navigator>
   );
 };

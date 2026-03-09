@@ -82,6 +82,18 @@ const CustomDrawer: React.FC<Props> = ({ visible, onSelect }) => {
             onPress={() => dispatch(logout())}
           />
         </Drawer.Section>
+        <Drawer.Section>
+          <Drawer.Item
+            label="Add Driver"
+            icon="account-plus"
+            onPress={() => navigateTo('DriverScan')}
+          />
+          <Drawer.Item
+            label="Discontinue Driver"
+            icon="account-minus"
+            onPress={() => navigateTo('DriverDiscontinue')}
+          />
+        </Drawer.Section>
       </View>
 
       {/* Background Overlay */}
