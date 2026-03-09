@@ -18,7 +18,7 @@ export default function DriverRegister({
   onSubmit,
 }: DriverRegisterProps) {
   return (
-    <View>
+    <View style={styles.container}>
       <TextInput
         label="Company Name"
         value={values.companyname}
@@ -122,6 +122,11 @@ export default function DriverRegister({
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    marginTop: 30,
+  },
   input: {
     marginBottom: 12,
   },

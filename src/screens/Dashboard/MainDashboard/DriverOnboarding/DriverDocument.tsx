@@ -141,6 +141,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 10,
+    marginTop: 30,
   },
 
   row: {

@@ -8,8 +8,10 @@ interface FormValues {
   reason: string;
   rating: number;
 }
-
-export default function DriverDiscontinue({ navigation }) {
+interface Props {
+  navigation: any;
+}
+export default function DriverDiscontinue({ navigation }: Props) {
   const [values, setValues] = useState<FormValues>({
     mobileno: '',
     reason: '',
@@ -74,7 +76,7 @@ export default function DriverDiscontinue({ navigation }) {
             ratingCount={5}
             imageSize={34}
             startingValue={values.rating}
-            onFinishRating={rating => handleChange('rating', rating)}
+            onFinishRating={(rating: number) => handleChange('rating', rating)}
           />
 
           <Text style={styles.ratingText}>{values.rating} / 5</Text>
